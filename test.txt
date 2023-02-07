@@ -1,3 +1,5 @@
+// const uri = "mongodb+srv://wianmevi:wianmevi@elpro.ketu4ul.mongodb.net/?retryWrites=true&w=majority";
+
 Su usuario es: 1754856465 y su contraseña es: f3ihjxnsAVjjSV9p
 Su usuario es: 1754856465 y su contraseña es: G677gN9nmfGTBYND
 Su usuario es: 1754856465 y su contraseña es: 2JKYiuouNkHe23eK
