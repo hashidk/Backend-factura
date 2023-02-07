@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <title>reCAPTCHA demo: Simple page</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  </head>
+  <body>
+    <form id="form">
+      <div class="g-recaptcha" data-sitekey="6Ld42DEkAAAAANjqkDiurIhZg57ywFeK18PlXCpA"></div>
+      <br/>
+      <input type="submit" value="Submit">
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // var form = document.getElementById("form")
+
+        // form.addEventListener("submit", async function (e) {
+        //     e.preventDefault();
+        //     console.log(e);
+        //     const response = await fetch("http://localhost/api/rc", {
+        //         method: 'POST'
+        //     })
+        // })
+
+        document.getElementById("form").addEventListener("submit", async function(evt){
+            evt.preventDefault();
+            var response = grecaptcha.getResponse();
+
+            if(response.length == 0) { 
+                alert("¡Verifica que eres un humano!"); 
+                return false;
+            }else{
+                try {
+                    const resp = await axios.post("http://localhost/api/rc", {
+                        'g-recaptcha-response': response
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    console.log(resp.data);
+                } catch (error) {
+                    console.log(error.response.data);
+                }
+            }
+        
+        });
+    </script>
+  </body>
+</html>
