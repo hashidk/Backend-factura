@@ -1,18 +1,31 @@
 const jwt = require("jsonwebtoken");
-const {handleUserDb} = require("../data-access");
+const handleCollectionDB = require("../data-access");
 const User = require("../models/user.model");
-const {findOne, find, insertOne} = handleUserDb();
+const clienteDB = handleCollectionDB('Clientes');
+const empleadoDB = handleCollectionDB('Empleados');
 
 const SECRET_KEY = "mysecret"
 
 module.exports = function makeAuthUsers() {
-    async function verifyCredentialsUser(nickname, password) {
-        // const query = { nickname, password: SHA256(password).toString() };
-        const query = { nickname };
-
-        var user = null
+    async function verifyCredentialsUser(nickname, password, rol) {
+        
         try {
-            user = await findOne(query)
+            var user = null
+            switch (rol) {
+                case "cliente":
+                    user = await clienteDB.findOne({ identificacion: nickname }, { "usuario":1, "nombre":0 })
+                    break;
+                case "empleado":
+                    user = await empleadoDB.findOne({ identificacion: nickname }, { usuario:1 })
+                    break;
+                default:
+                    return {
+                        error: 'Rol incorrecto',
+                        codigo: 400,
+                        user: null
+                    }
+            }
+
             if (user === null) {
                 return {
                     error: 'Credenciales incorrectas: correo',
@@ -20,7 +33,7 @@ module.exports = function makeAuthUsers() {
                     user: null
                 }
             }else{
-                var userIns = new User(user)
+                var userIns = new User(user.usuario)
                 if (userIns.comparePassword(password)) {
                     return {
                         error: null,
@@ -35,7 +48,8 @@ module.exports = function makeAuthUsers() {
                     }     
                 }
             }
-        } catch(err) {
+            
+        } catch (error) {
             return {
                 error: 'Error al acceder a los datos',
                 codigo: 400,
@@ -44,16 +58,17 @@ module.exports = function makeAuthUsers() {
         }
     }
     
-    function genJWT(user) {
+    function genJWT(nickname, rol) {
         return jwt.sign({
-            nickname: user.nickname
+            nickname: nickname,
+            rol:      rol
         }, SECRET_KEY);
     }
     
     async function findUser(nickname) {
         const query = { nickname };
         try {
-            var resp = await findOne(query)
+            var resp = await hUserDB.findOne(query)
             return {
                 error: null,
                 codigo: 200,
@@ -85,7 +100,7 @@ module.exports = function makeAuthUsers() {
             email: user.email,
         })
         newUser.encryptPassword(user.password)
-        var err = await insertOne(newUser.data);
+        var err = await hUserDB.insertOne(newUser.data);
         if (err) 
             return {
                 error: "Error al insertar los valores",

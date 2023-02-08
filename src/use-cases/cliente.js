@@ -1,11 +1,19 @@
-
-const {handleClientDb} = require("../data-access")
-const {find, insertOne, findOne} = handleClientDb();
+const handleCollectionDB = require("../data-access")
+const clienteDB = handleCollectionDB("Clientes")
 
 module.exports = function makeUCClientes() {
+    async function showInfo(identificacion) {
+        try {
+            var cliente = await clienteDB.findOne({identificacion})
+            return cliente;
+        } catch (error) {
+            return null;
+        }
+    };
+
     async function showClientes() {
         try {
-            var users = await find({})
+            var users = await clienteDB.find({})
             return users;
         } catch (error) {
             return null;
@@ -14,7 +22,16 @@ module.exports = function makeUCClientes() {
 
     async function findClientePorId(identificacion) {
         try {
-            var cliente = await findOne({identificacion})
+            var cliente = await clienteDB.findOne({identificacion})
+            return cliente;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    async function findCliente(_id) {
+        try {
+            var cliente = await clienteDB.findOne({_id})
             return cliente;
         } catch (error) {
             return null;
@@ -33,7 +50,7 @@ module.exports = function makeUCClientes() {
         //         codigo: 400
         //     }
         
-        var err = await insertOne(cliente);
+        var err = await clienteDB.insertOne(cliente);
         if (err) 
             return "Error al insertar los valores";
 
@@ -43,6 +60,8 @@ module.exports = function makeUCClientes() {
     return Object.freeze({
         showClientes,
         findClientePorId,
-        crearCliente
+        crearCliente,
+        findCliente,
+        showInfo
     })
   }

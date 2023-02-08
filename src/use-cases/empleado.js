@@ -1,10 +1,10 @@
-const {handleEmpleadoDb} = require("../data-access")
-const {find} = handleEmpleadoDb();
+const handleCollectionDB = require("../data-access")
+const hEmpleadoDB = handleCollectionDB("Empleados");
 
 module.exports = function makeUCEmpleados() {
-    async function showInfo() {
+    async function showInfo(identificacion) {
         try {
-            var users = await find({})
+            var users = await hEmpleadoDB.find({identificacion})
             return users;
         } catch (error) {
             return null;

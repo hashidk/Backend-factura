@@ -2,8 +2,8 @@
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "mysecret"
 
-const {handleUserDb} = require("../data-access");
-const {findOne} = handleUserDb();
+const handleCollectionDB = require("../data-access");
+const clienteDB = handleCollectionDB("Clientes");
 
 const authorization = async (req, res, next) => {
     const token = req.cookies.access_token;
@@ -11,15 +11,31 @@ const authorization = async (req, res, next) => {
       return res.status(403).send("Inicie sesión para poder ingresar");
     }
 
+    const data = jwt.verify(token, SECRET_KEY);
+    var user = null;
+
     try {
-      const data = jwt.verify(token, SECRET_KEY);
-      const query = { nickname: data.nickname.toLocaleLowerCase()};
+      switch (data.rol) {
+        case "cliente":
+            user = await clienteDB.findOne({ identificacion: data.nickname })
+            break;
+        case "empleado":
+            user = await empleadoDB.findOne({ identificacion: data.nickname })
+            break;
+        default:
+            return res.status(400).send("Rol incorrecto");
+      }
 
-      var respuesta = await findOne(query)
-      if (!respuesta)
+      if (req.baseUrl.split("/").slice(-1)[0] !== data.rol) {
+        return res.status(400).send("Acceso no autorizado");
+      }
+
+      if (!user) {
         return res.status(403).send('No se pudo autenticarle, vuelva a intentar')
-
-      return next();
+      }else{
+        res.locals.user = data
+        return next();
+      }
     } catch(err) {
       return res.status(403).send("Falla al obtener el token: " + err);
     }

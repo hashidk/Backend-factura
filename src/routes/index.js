@@ -1,4 +1,5 @@
-const router = require('express').Router();
+const express = require('express')
+const router = express.Router();
 const axios = require('axios');
 const controllers = require("../controllers")
 const middlewares = require('../middlewares');
@@ -176,24 +177,28 @@ function getTextMessageInput(recipient, text) {
   }
 
 router.post("/login", controllers.authControllers().loginUser)
-router.post("/register", controllers.authControllers().registerUser)
+// router.post("/register", controllers.authControllers().registerUser)
 router.post("/logout", middlewares.authorization,controllers.authControllers().logOut)
 
 //Funciones de Cliente
-router.get("/cliente/info", (req, res) => { res.status(200).send("ok")  })
-router.get("/cliente/cuentas", (req, res) => { res.status(200).send("ok")  })
-router.get("/cliente/cuentas/:id", (req, res) => { res.status(200).send("ok")  })
-router.get("/cliente/cuentas/:id/info", (req, res) => { res.status(200).send("ok")  })
-router.get("/cliente/cuentas/:id/transferir", (req, res) => { res.status(200).send("ok")  })
+var rutasCliente = express.Router();
+rutasCliente.get("/info", controllers.clientesControllers().getInfo )
+rutasCliente.get("/cuentas", controllers.clientesControllers().getCuentas)
+rutasCliente.get("/cuentas/:idCuenta", controllers.clientesControllers().getCuenta)
+rutasCliente.post("/cuentas/:idCuenta/transferir/interno", controllers.clientesControllers().transferencia_interna)
 
 //Funciones de Empleado
-router.get("/empleado/info", controllers.empleadoControllers().getInfo)
-router.get("/empleado/clientes", controllers.empleadoControllers().getClientes)
-router.post("/empleado/clientes", controllers.empleadoControllers().addCliente)
-router.get("/empleado/cuentas", (req, res) => { res.status(200).send("ok")  })
-router.post("/empleado/cuentas", (req, res) => { res.status(200).send("ok")  })
+var rutasEmpleado = express.Router();
+rutasEmpleado.get("/info", controllers.empleadoControllers().getInfo)
+rutasEmpleado.get("/clientes", controllers.empleadoControllers().getClientes)
+rutasEmpleado.post("/clientes", controllers.empleadoControllers().addCliente)
+rutasEmpleado.get("/cuentas", controllers.empleadoControllers().getCuentas)
+rutasEmpleado.post("/cuentas", controllers.empleadoControllers().addCuenta)
+
+// router.get("/clientes", controllers.clientesControllers().getClientes)
+// router.post("/clientes", controllers.clientesControllers().addCliente)
 
 
-router.get("/clientes", controllers.clientesControllers().getClientes)
-router.post("/clientes", controllers.clientesControllers().addCliente)
+router.use("/cliente", middlewares.authorization, rutasCliente)
+router.use("/empleado", middlewares.authorization, rutasEmpleado)
 module.exports = router
