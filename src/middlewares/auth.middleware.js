@@ -4,6 +4,7 @@ const SECRET_KEY = "mysecret"
 
 const handleCollectionDB = require("../data-access");
 const clienteDB = handleCollectionDB("Clientes");
+const empleadoDB = handleCollectionDB("Empleados");
 
 const authorization = async (req, res, next) => {
     const token = req.cookies.access_token;
@@ -26,7 +27,8 @@ const authorization = async (req, res, next) => {
             return res.status(400).send("Rol incorrecto");
       }
 
-      if (req.baseUrl.split("/").slice(-1)[0] !== data.rol) {
+      var urlTo = req.baseUrl.split("/").slice(-1)[0]
+      if ( urlTo !== data.rol && (urlTo === "cliente" || urlTo === "empleado")) {
         return res.status(400).send("Acceso no autorizado");
       }
 

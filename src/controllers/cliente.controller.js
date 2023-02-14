@@ -1,5 +1,5 @@
 const {makeUCClientes, makeUCCuentas} = require("../use-cases")
-const {showClientes, showInf} = makeUCClientes()
+const {showClientes, showInfo} = makeUCClientes()
 const { showInfo:showInfoCuentas, showInfoCuenta, verfyCuenta, transfenciaInternaWithoutT } = makeUCCuentas();
 
 const {Cliente, User, TransferenciaInterna} = require("../models")
@@ -31,7 +31,11 @@ function clientesControllers() {
         const { idCuenta } = req.params;
         try {
             var result = await showInfoCuenta(nickname, idCuenta)
-            return res.status(200).send(result)
+            if (!result) {
+                return res.status(400).send("No posee esta cuenta o no es parte de ella")
+            }else{
+                return res.status(200).send(result)
+            }
         } catch (error) {
             return res.status(400).send(error)
         }
@@ -60,7 +64,6 @@ function clientesControllers() {
             
             //Verificar si existe la otra cuenta cuentas
             var cuenta2 = await verfyCuenta(cuentaDestino)
-            console.log(cuenta2);
             if (!cuenta2) {
                 return res.status(400).send("La cuenta destino no existe")
             }
@@ -76,44 +79,6 @@ function clientesControllers() {
         } catch (error) {
             return res.status(400).send(error)
         }
-
-        // const query = {
-        //     $or: [{
-        //         id: idCuenta,
-        //         money: {
-        //             $gte: money
-        //         }
-        //     },{
-        //         id: cliente_destino
-        //     }
-        //     ]
-        // }
-
-        // data.db.collection("Clientes").find(query).toArray().then( async resp => {
-        //     if (resp.length == 2) {
-
-        //         const session = data.client.startSession();
-        //         try {
-        //             await session.withTransaction(async () => {
-        //                 await data.db.collection("Clientes").updateOne({ id : idCuenta }, { $inc: { money: -money } }, { session });
-        //                 await data.db.collection("Clientes").updateOne({ id : cliente_destino }, { $inc: { money } }, { session });
-        //                 await data.db.collection("logs").insertOne({date: new Date(), message: "User " + user_transfer_id + " has received " + money + "$ from " + idCuenta + "."})
-        //             }, transactionOptions);
-        //         } catch (e) {
-        //             console.log(e);
-        //             res.status(400).send("Fail")
-        //         } finally {
-        //             await session.endSession();
-        //         }
-
-        //         res.status(200).send("OK")
-        //     }else {
-        //         res.status(400).send("Fail")
-        //     }
-        // }).catch(err => {
-        //     console.log(err)
-        //     res.status(400).send("Fail")
-        // })
     }
 
     return Object.freeze({

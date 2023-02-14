@@ -16,6 +16,10 @@ class TransferenciaInterna {
     static verificarLimite(monto){
         return (monto <= LIMITE);
     }
+
+    static verificarDiffCuentas(idCuenta1, idCuenta2){
+        return (idCuenta1 !== idCuenta2)
+    }
 }
 
 module.exports = TransferenciaInterna
