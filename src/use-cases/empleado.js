@@ -1,17 +1,25 @@
 const handleCollectionDB = require("../data-access")
-const hEmpleadoDB = handleCollectionDB("Empleados");
+const empleadoDB = handleCollectionDB("Empleados");
 
 module.exports = function makeUCEmpleados() {
-    async function showInfo(identificacion) {
+    async function getEmpleado(identificacion) {
         try {
-            var users = await hEmpleadoDB.find({identificacion})
-            return users;
+            return await empleadoDB.findOne({identificacion});
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
+    async function createEmpleado(cliente) {
+        try {
+            await empleadoDB.insertOne(cliente);
+            return null;    
+        } catch (error) {
+            throw error;   
+        }
+    }
+
     return Object.freeze({
-        showInfo
+        getEmpleado, createEmpleado
     })
   }

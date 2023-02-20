@@ -1,8 +1,10 @@
 const jwt = require("jsonwebtoken");
 const handleCollectionDB = require("../data-access");
+const { ErrorHTTP } = require("../models");
 const User = require("../models/user.model");
 const clienteDB = handleCollectionDB('Clientes');
 const empleadoDB = handleCollectionDB('Empleados');
+const adminDB = handleCollectionDB('Admins');
 
 const SECRET_KEY = "mysecret"
 
@@ -11,50 +13,38 @@ module.exports = function makeAuthUsers() {
         
         try {
             var user = null
+            const query = { identificacion: nickname }
+            const proyection = {id_:1, usuario:1, activo:1}
             switch (rol) {
                 case "cliente":
-                    user = await clienteDB.findOne({ identificacion: nickname }, { "usuario":1, "nombre":0 })
+                    user = await clienteDB.findOne( query, proyection )
                     break;
                 case "empleado":
-                    user = await empleadoDB.findOne({ identificacion: nickname }, { usuario:1 })
+                    user = await empleadoDB.findOne( query, proyection )
+                    break;
+                case "administrador":
+                    user =  await adminDB.findOne( query, proyection )
                     break;
                 default:
-                    return {
-                        error: 'Rol incorrecto',
-                        codigo: 400,
-                        user: null
-                    }
+                    throw new ErrorHTTP('Rol incorrecto', 400);
             }
 
             if (user === null) {
-                return {
-                    error: 'Credenciales incorrectas: correo',
-                    codigo: 400,
-                    user: null
-                }
+                throw new ErrorHTTP('No existe ese usuario, verifique que haya ingresado bien los datos', 400);
             }else{
+                if (user.activo === false) {
+                    throw new ErrorHTTP('Lo sentimos, su usuario se encuentra desactivado', 400);
+                }
                 var userIns = new User(user.usuario)
                 if (userIns.comparePassword(password)) {
-                    return {
-                        error: null,
-                        codigo: 200,
-                        user: userIns.data
-                    }
+                    return userIns.data
                 }else{
-                    return {
-                        error: 'Credenciales incorrectas; contraseña',
-                        codigo: 400,
-                        user: null
-                    }     
+                    throw new ErrorHTTP('La contraseña es incorrecta', 400);
                 }
             }
             
         } catch (error) {
-            return {
-                error: 'Error al acceder a los datos',
-                codigo: 400,
-                user: null
-            }
+            throw error;   
         }
     }
     
@@ -65,58 +55,58 @@ module.exports = function makeAuthUsers() {
         }, SECRET_KEY);
     }
     
-    async function findUser(nickname) {
-        const query = { nickname };
-        try {
-            var resp = await hUserDB.findOne(query)
-            return {
-                error: null,
-                codigo: 200,
-                user: resp
-            }
-        } catch (error) {
-            return {
-                error: err,
-                codigo: 400,
-                user: null
-            }
-        }
-    }
+    // async function findUser(nickname) {
+    //     const query = { nickname };
+    //     try {
+    //         var resp = await hUserDB.findOne(query)
+    //         return {
+    //             error: null,
+    //             codigo: 200,
+    //             user: resp
+    //         }
+    //     } catch (error) {
+    //         return {
+    //             error: err,
+    //             codigo: 400,
+    //             user: null
+    //         }
+    //     }
+    // }
 
-    async function createUser(user) {
-        var verify = User.validar({
-            nickname: user.nickname,
-            email: user.email,
-            password: user.password
-        })
-        if(verify)
-            return {
-                error: "Error al validar los valores: " + verify,
-                codigo: 400
-            }
+    // async function createUser(user) {
+    //     var verify = User.validar({
+    //         nickname: user.nickname,
+    //         email: user.email,
+    //         password: user.password
+    //     })
+    //     if(verify)
+    //         return {
+    //             error: "Error al validar los valores: " + verify,
+    //             codigo: 400
+    //         }
         
-        var newUser = new User({
-            nickname: user.nickname,
-            email: user.email,
-        })
-        newUser.encryptPassword(user.password)
-        var err = await hUserDB.insertOne(newUser.data);
-        if (err) 
-            return {
-                error: "Error al insertar los valores",
-                codigo: 400
-            }
+    //     var newUser = new User({
+    //         nickname: user.nickname,
+    //         email: user.email,
+    //     })
+    //     newUser.encryptPassword(user.password)
+    //     var err = await hUserDB.insertOne(newUser.data);
+    //     if (err) 
+    //         return {
+    //             error: "Error al insertar los valores",
+    //             codigo: 400
+    //         }
 
-        return {
-            error: null,
-            codigo: 200
-        }
-    }
+    //     return {
+    //         error: null,
+    //         codigo: 200
+    //     }
+    // }
 
     return Object.freeze({
         verifyCredentialsUser,
         genJWT,
-        createUser,
-        findUser
+        // createUser,
+        // findUser
     })
   }

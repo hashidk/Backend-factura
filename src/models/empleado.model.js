@@ -5,7 +5,7 @@ module.exports = class Empleado {
     constructor (data){
         var nuevoUser = new User({
             email:    data.email,
-            nickname: data.nickname
+            nickname: data.identificacion
         })
         nuevoUser.encryptPassword(data.password);
 
@@ -13,6 +13,7 @@ module.exports = class Empleado {
             _id: uuid.v4(),
             nombre: data.nombre,
             apellido: data.apellido,
+            identificacion: data.identificacion,
             usuario: nuevoUser.data
         }
     }

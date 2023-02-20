@@ -7,7 +7,8 @@ class Cuenta {
             monto: 0,
             moneda: "USD",
             tipo: data.tipo,
-            clientes: data.clientes
+            clientes: data.clientes,
+            activo: true
         }
     }
 }

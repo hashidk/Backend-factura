@@ -1,5 +1,5 @@
 const {makeAuthUsers} = require("../use-cases")
-const {verifyCredentialsUser, genJWT, findUser, createUser} = makeAuthUsers()
+const {verifyCredentialsUser, genJWT} = makeAuthUsers()
 const {cookie_config} = require('./config');
 
 function authControllers() {
@@ -11,15 +11,11 @@ function authControllers() {
     
         try {
             var result = await verifyCredentialsUser(nickname.toLocaleLowerCase(), password, rol)
-            if (result.error)
-                return res.status(result.codigo).send(result.error)
-            else{
-                return res.cookie("access_token", genJWT(result.user.nickname, rol), cookie_config)
-                          .status(200).send("Todo bien")
-            }
+            return res.cookie("access_token", genJWT(result.nickname, rol), cookie_config)
+                      .status(200).send("Usuario autenticado")
 
         } catch (error) {
-            return res.status(400).send('Algo ocurrió')
+            return res.status(error.code).send(error.msg)
         }
 
     }
@@ -62,7 +58,6 @@ function authControllers() {
     }
 
     return Object.freeze({
-        // registerUser,
         loginUser,
         logOut
     })

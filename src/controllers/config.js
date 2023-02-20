@@ -1,13 +1,16 @@
 const SECOND = 1000
 const MINUTE = 60 * SECOND
 const HOUR = 60 * MINUTE
+require("dotenv").config()
+
+var secure = process.env.MODE ? process.env.MODE === "production" : false;
 
 const cookie_config = {
     httpOnly: false,
-    secure: false, //true
+    secure: secure, //true
     maxAge: 30 * MINUTE,
     sameSite: 'none',
-    // domain: '192.168.100.51:3000,192.168.100.51:3500'
+    // domain: 'http://localhost:4200'
 }
 
 module.exports = {

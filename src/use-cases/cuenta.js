@@ -2,77 +2,74 @@ const handleCollectionDB = require("../data-access")
 const cuentaDB = handleCollectionDB("Cuentas");
 const clienteDB = handleCollectionDB("Clientes");
 const transferenciasIntDB = handleCollectionDB("TransferenciasInternas");
-const {TransferenciaInterna} = require("../models")
+const {TransferenciaInterna, ErrorHTTP} = require("../models")
+const { default: axios } = require("axios");
 
 module.exports = function makeUCCuentas() {
-    async function showInfo(identificacion) {
+    async function getCuentas() {
+        try {
+            return await cuentaDB.find({});
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    async function getCuentasByCliente(identificacion) {
         try {
             var cliente = await clienteDB.findOne({identificacion})
-            var cuentas = await cuentaDB.find({ clientes: { $all: [ cliente._id ] } })
+            var cuentas = await cuentaDB.find({ clientes: { $all: [ cliente._id ] }, activo:true })
             return cuentas;
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
-    async function showInfo(identificacion) {
+    async function getCuentaById(idCuenta) {
         try {
-            var cliente = await clienteDB.findOne({identificacion})
-            var cuentas = await cuentaDB.find({ clientes: { $all: [ cliente._id ] } })
-            return cuentas;
+            return await cuentaDB.findOne({ _id: idCuenta });
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
-    async function verfyCuenta(idCuenta) {
-        try {
-            var cuenta = await cuentaDB.findOne({ _id: idCuenta })
-            return cuenta;
-        } catch (error) {
-            return null;
-        }
-    };
-
-    async function showInfoCuenta(identificacion, idCuenta) {
+    async function getCuentaByCliente(identificacion, idCuenta) {
         try {
             var cliente = await clienteDB.findOne({identificacion})
             var cuenta = await cuentaDB.findOne({ _id: idCuenta, clientes: { $all: [ cliente._id ] } })
+            if (!cuenta) throw new ErrorHTTP("No posee esta cuenta o no es parte de ella", 400)
+            var clientes = await clienteDB.find({ _id: { $in: cuenta.clientes } })
+            cuenta.clientes = clientes;
             return cuenta;
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
-    async function crearCuenta(cuenta) {
-        // var verify = User.validar({
-        //     nickname: user.nickname,
-        //     email: user.email,
-        //     password: user.password
-        // })
-        // if(verify)
-        //     return {
-        //         error: "Error al validar los valores: " + verify,
-        //         codigo: 400
-        //     }
-        
-        var err = await cuentaDB.insertOne(cuenta);
-        if (err) 
-            return "Error al insertar los valores";
-
-        return null
+    async function getCuentasDiffById(idCuenta) {
+        try {
+            return await cuentaDB.find({ _id: { $ne: idCuenta } });
+        } catch (error) {
+            throw error;
+        }
     }
 
-    async function transfenciaInternaWithT(cuentaOrigen, cuentaDestino, monto) {
+    async function createCuenta(cuenta) {
+        try {
+            await cuentaDB.insertOne(cuenta);
+            return null;    
+        } catch (error) {
+            throw error;   
+        }
+    }
+
+    async function transferInternAsTransaction(cuentaOrigen, cuentaDestino, monto) {
         
         var val = null
         try {
             const {options, session} = await cuentaDB.createSession()
             await session.withTransaction(async () => {
-                var err = await cuentaDB.updateOne({ _id : cuentaOrigen  }, { $inc: { monto: -monto } }, { session });
-                console.log(err);
+                await cuentaDB.updateOne({ _id : cuentaOrigen  }, { $inc: { monto: -monto } }, { session });
                 await cuentaDB.updateOne({ _id : cuentaDestino }, { $inc: { monto } }, { session });
-                // await data.db.collection("logs").insertOne({date: new Date(), message: "User " + user_transfer_id + " has received " + money + "$ from " + idCuenta + "."})
             }, options);
         } catch (e) {
             val = e
@@ -82,29 +79,73 @@ module.exports = function makeUCCuentas() {
         }
     }
 
-    async function transfenciaInternaWithoutT(cuentaOrigen, cuentaDestino, monto) {
-        var err
+    async function transferInternAsNonTransaction(cuentaOrigen, cuentaDestino, monto) {
         try {
-            err = await cuentaDB.updateOne({ _id : cuentaOrigen  }, { $inc: { monto: -monto } });
-            if (err) return err
-
-            err = await cuentaDB.updateOne({ _id : cuentaDestino }, { $inc: { monto } });
-            if (err) return err
-
-            const ti = new TransferenciaInterna({monto,origen: cuentaOrigen,destino: cuentaDestino})
-            err = await transferenciasIntDB.insertOne(ti.tranferInt)
-            if (err) return err
-                // await data.db.collection("logs").insertOne({date: new Date(), message: "User " + user_transfer_id + " has received " + money + "$ from " + idCuenta + "."})
+            await cuentaDB.updateOne({ _id : cuentaOrigen  }, { $inc: { monto: -monto } });
+            await cuentaDB.updateOne({ _id : cuentaDestino }, { $inc: { monto } });
+            
+            const ti = new TransferenciaInterna({monto ,origen: cuentaOrigen,destino: cuentaDestino})
+            await transferenciasIntDB.insertOne(ti.tranferInt)
 
             return null
         } catch (error) {
-            return error
+            throw error;
         }
     }
 
+    async function changeActiveCuenta(_id, activo) {
+        try {
+            if (activo) {
+                await cuentaDB.updateOne({_id}, {$set: {activo:false}})
+            }else{
+                await cuentaDB.updateOne({_id}, {$set: {activo:true}})
+            }
+        } catch (error) {
+            throw error; 
+        }
+    }
+
+    async function updateCuenta(cuenta) {
+        try {
+            const _id = cuenta._id
+            delete cuenta._id
+            delete cuenta.clientes
+            await cuentaDB.updateOne({ _id }, {$set: cuenta});
+            return null;    
+        } catch (error) {
+            throw error;   
+        }
+    }
+
+    async function testBanco(URL) {
+        try {
+            await axios.get(URL)
+        } catch (error) {
+            throw new ErrorHTTP("No hay conexión con el banco, vuelva a intentar más tarde", 500)
+        }
+    }
+
+    async function req_transferir_banco(URL, username, password, monto, cuentaDestino) {
+        try {
+            await axios.post(
+                URL, 
+                {monto, cuentaDestino}, 
+                {
+                    withCredentials:true, 
+                    auth: {
+                        username,
+                        password
+                      }
+                })
+        } catch (error) {
+            // console.log(error);
+            throw new ErrorHTTP("No se puedo transferir", 400)
+        }
+    }
 
     return Object.freeze({
-        showInfo, crearCuenta, showInfoCuenta, verfyCuenta, transfenciaInternaWithT,
-        transfenciaInternaWithoutT
+        getCuentas, getCuentasByCliente, getCuentaById, getCuentaByCliente, getCuentasDiffById,
+        createCuenta, transferInternAsTransaction, transferInternAsNonTransaction, updateCuenta,
+        changeActiveCuenta, req_transferir_banco, testBanco
     })
   }

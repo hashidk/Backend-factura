@@ -1,4 +1,6 @@
-const Database = require("../Database")
+const Database = require("../Database");
+const { Logger } = require("../Logger");
+const { ErrorHTTP } = require("../models");
 const conn = Database.conn
 
 const transactionOptions = {
@@ -8,29 +10,41 @@ const transactionOptions = {
   };
 
 function handleCollectionDb(_collec) {
-    async function find(_filter, _options = {}) {
-        return await conn.db.collection( _collec ).find(_filter, _options).toArray();
-    }
-
-    async function findOne(_filter, _options = {}) {
-        return await conn.db.collection( _collec ).findOne(_filter, _options);
-    }
-
-    async function insertOne(nuevo_cliente) {
+    async function find(_filter, _proyection = null){
         try {
-            await conn.db.collection( _collec ).insertOne(nuevo_cliente);
-            return null
+            return await conn.db.collection( _collec ).find( _filter, _proyection ? { projection: _proyection } : {} ).toArray();
         } catch (error) {
-            return error
+            Logger.logErr(error);
+            throw new ErrorHTTP(`No se pudieron obtener los registros`, 500);
+        }
+    }
+
+    async function findOne(_filter, _proyection = null) {
+        try {
+            return await conn.db.collection( _collec ).findOne(  _filter, _proyection ? { projection: _proyection } : {} );
+        } catch (error) {
+            Logger.logErr(error);
+            throw new ErrorHTTP(`No se pudo obtener el registro buscado`, 500);
+        }
+    }
+
+    async function insertOne( _newdocument ) {
+        try {
+            await conn.db.collection( _collec ).insertOne( _newdocument );
+            return null;
+        } catch (error) {
+            Logger.logErr(error);
+            throw new ErrorHTTP(`No se pudo ingresar ese registro`, 500);
         }
     }
 
     async function updateOne(_filter, _update={}, _config={}) {
         try {
             await conn.db.collection( _collec ).updateOne(_filter, _update, _config);
-            return null
+            return null;
         } catch (error) {
-            return error
+            Logger.logErr(error);
+            throw new ErrorHTTP(`No se pudo actualizar ese registro`, 500);
         }
     }
 

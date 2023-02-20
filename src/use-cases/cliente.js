@@ -1,44 +1,34 @@
-const handleCollectionDB = require("../data-access")
+const handleCollectionDB = require("../data-access");
+const { ErrorHTTP } = require("../models");
 const clienteDB = handleCollectionDB("Clientes")
 
 module.exports = function makeUCClientes() {
-    async function showInfo(identificacion) {
+    async function getCliente(identificacion) {
         try {
             var cliente = await clienteDB.findOne({identificacion})
             return cliente;
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
-    async function showClientes() {
+    async function getClientes() {
         try {
-            var users = await clienteDB.find({})
-            return users;
+            return await clienteDB.find({});
         } catch (error) {
-            return null;
+            throw error;
         }
     };
 
-    async function findClientePorId(identificacion) {
+    async function getClienteById(_id) {
         try {
-            var cliente = await clienteDB.findOne({identificacion})
-            return cliente;
+            return  await clienteDB.findOne({_id});
         } catch (error) {
-            return null;
+            throw error;
         }
     }
 
-    async function findCliente(_id) {
-        try {
-            var cliente = await clienteDB.findOne({_id})
-            return cliente;
-        } catch (error) {
-            return null;
-        }
-    }
-
-    async function crearCliente(cliente) {
+    async function createCliente(cliente) {
         // var verify = User.validar({
         //     nickname: user.nickname,
         //     email: user.email,
@@ -49,19 +39,45 @@ module.exports = function makeUCClientes() {
         //         error: "Error al validar los valores: " + verify,
         //         codigo: 400
         //     }
-        
-        var err = await clienteDB.insertOne(cliente);
-        if (err) 
-            return "Error al insertar los valores";
+        try {
+            await clienteDB.insertOne(cliente);
+            return null;    
+        } catch (error) {
+            throw error;   
+        }
+    }
 
-        return null
+    async function changeActiveCliente(_id, activo) {
+        try {
+            if (activo) {
+                await clienteDB.updateOne({_id}, {$set: {activo:false}})
+            }else{
+                await clienteDB.updateOne({_id}, {$set: {activo:true}})
+            }
+        } catch (error) {
+            throw error; 
+        }
+    }
+
+    async function updateCliente(cliente) {
+        try {
+            const _id = cliente._id
+            delete cliente._id
+            delete cliente.identificacion
+            delete cliente.identificacion.nickname
+            await clienteDB.updateOne({ _id }, {$set: cliente});
+            return null;    
+        } catch (error) {
+            throw error;   
+        }
     }
 
     return Object.freeze({
-        showClientes,
-        findClientePorId,
-        crearCliente,
-        findCliente,
-        showInfo
+        getClientes,
+        createCliente,
+        getClienteById,
+        getCliente,
+        changeActiveCliente,
+        updateCliente,
     })
   }

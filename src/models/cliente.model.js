@@ -7,8 +7,7 @@ module.exports = class Cliente {
             email:    data.email,
             nickname: data.identificacion
         })
-        nuevoUser.encryptPassword(data.password);
-
+        if (data.password) nuevoUser.encryptPassword(data.password);
 
         this.cliente = {
             _id: uuid.v4(),
@@ -18,7 +17,8 @@ module.exports = class Cliente {
             ciudad: data.ciudad,
             codigo_postal: data.codigo_postal,
             identificacion: data.identificacion,
-            usuario: nuevoUser.data
+            usuario: nuevoUser.data,
+            activo: true,
         }
     }
 }

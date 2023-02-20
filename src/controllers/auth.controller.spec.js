@@ -5,10 +5,6 @@ describe('Pruebas para el controlador de Autenticación', () => {
     test('Control de acceso - Sin autenticarse', async() => {
         const response = await request("http://localhost:8080").post("/api/logout");
         expect(response.statusCode).toEqual(403);
-        // expect(response.body).toHaveLength(6);
-        // expect(response.statusCode).toBe(200);
-        // // Testing a single element in the array
-        // expect(response.body).toEqual(expect.arrayContaining(['Earth']));
     });
 
     test('Autenticandose', async() => {

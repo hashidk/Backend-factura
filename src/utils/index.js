@@ -10,4 +10,3 @@ function generatePasswordRand(length) {
 module.exports = {
     generatePasswordRand
 }
-// console.log(generatePasswordRand(16));
