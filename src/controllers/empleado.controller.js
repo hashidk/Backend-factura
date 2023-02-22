@@ -3,7 +3,7 @@ const { getEmpleado } = makeUCEmpleados()
 const { getClientes:getClientesUS, getCliente, createCliente, getClienteById, updateCliente:updateClienteUS, changeActiveCliente } = makeUCClientes()
 const { getCuentas:getCuentasUS, createCuenta, changeActiveCuenta, updateCuenta:updateCuentaUS, getCuentaById } = makeUCCuentas();
 
-const { generatePasswordRand } = require("../utils")
+const { generatePasswordRand, validators } = require("../utils")
 const { Cliente, Cuenta } = require("../models")
 const fs = require('fs');
 
@@ -31,6 +31,18 @@ function empleadosControllers() {
         const { nombre, apellido, provincia, ciudad, codigo_postal, identificacion, correo } = req.body
         if (!nombre || !apellido || !provincia || !ciudad || !codigo_postal || !identificacion || !correo) {
             return res.status(400).send("No enviaron los datos necesarios")
+        }
+
+        try {
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("apellido").anystring.validateAsync({value: apellido})
+            await validators.validString("provincia").anystring.validateAsync({value: provincia})
+            await validators.validString("ciudad").anystring.validateAsync({value: ciudad})
+            await validators.validString().code_postal.validateAsync({value: codigo_postal})
+            await validators.validString().identificacion.validateAsync({value: identificacion})
+            await validators.validString().email.validateAsync({value: correo})
+        } catch (error) {
+            return res.status(400).send(error.message)
         }
 
         try {
@@ -64,13 +76,26 @@ function empleadosControllers() {
 
     async function addCuenta(req, res) {
         var { tipo, clientes } = req.body
-        if (!tipo || !clientes) {
-            return res.status(400).send("No se enviaron los datos necesarios")
+        if (!tipo || !clientes) return res.status(400).send("No se enviaron los datos necesarios")
+    
+        //Validar datos
+        try {
+            await validators.validString("tipo").anystring.validateAsync({value: tipo})
+        } catch (error) {
+            return res.status(400).send(error.message)
         }
-        tipo = (tipo === "corriente" || tipo === "C") ? "C" : "A"
+
+        //tratamiento del tipo de cuenta
+        if (tipo === "corriente" || tipo === "C") {
+            tipo = "C"
+        }else if(tipo === "ahorro" || tipo === "A"){
+            tipo = "A"
+        }else{
+            return res.status(400).send("El tipo de cuenta debe ser: ahorro o corriente");
+        }
 
         try {
-
+            //tratamiento de Clientes
             if (typeof clientes === 'string') {
                 clientes = [clientes]
             } else if (Array.isArray(clientes)) {
@@ -102,6 +127,18 @@ function empleadosControllers() {
         if (!nombre || !apellido || !provincia || !ciudad || !codigo_postal || !correo) {
             return res.status(400).send("No enviaron los datos necesarios")
         }
+
+        try {
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("apellido").anystring.validateAsync({value: apellido})
+            await validators.validString("provincia").anystring.validateAsync({value: provincia})
+            await validators.validString("ciudad").anystring.validateAsync({value: ciudad})
+            await validators.validString().code_postal.validateAsync({value: codigo_postal})
+            await validators.validString().email.validateAsync({value: correo})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         try {
             var cliente = await getClienteById(idCliente);
             if (!cliente) return res.status(400).send("El cliente no existe")
@@ -135,8 +172,14 @@ function empleadosControllers() {
 
     async function updateCuenta(req, res) {
         const { idCuenta } = req.params;
-
         const { monto } = req.body
+
+        try {
+            validators.validNumber().monto.validateAsync({value: monto})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         if (!monto) {
             return res.status(400).send("No enviaron los datos necesarios")
         }

@@ -1,9 +1,9 @@
 const { makeUCAdmins, makeUCEmpleados, makeUCBancos } = require("../use-cases")
 const { getAdmin } = makeUCAdmins()
-const { getEmpleado, createEmpleado} = makeUCEmpleados()
+const { getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado:updateEmpleadoUS, getEmpleados:getEmpleadosUS} = makeUCEmpleados()
 const { getBancos:getBancosUS, getBanco, getBancoByName, createBanco, updateBanco:updateBancoUS } = makeUCBancos()
 
-const { generatePasswordRand } = require("../utils")
+const { generatePasswordRand, validators } = require("../utils")
 const {Empleado, Banco} = require("../models")
 const fs = require('fs');
 
@@ -17,11 +17,29 @@ function adminsControllers() {
             return res.status(error.code).send(error.msg)
         }
     }
+
+    async function getEmpleados(req, res) {
+        try {
+            var result = await getEmpleadosUS()
+            return res.status(200).send(result)
+        } catch (error) {
+            return res.status(error.code).send(error.msg)
+        }
+    }
     
     async function addEmpleado(req, res) {
         const { nombre, apellido, identificacion, correo } = req.body
         if (!nombre || !apellido || !identificacion || !correo) {
             return res.status(400).send("No se enviaron los datos necesarios")
+        }
+
+        try {
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("apellido").anystring.validateAsync({value: apellido})
+            await validators.validString().identificacion.validateAsync({value: identificacion})
+            await validators.validString().email.validateAsync({value: correo})
+        } catch (error) {
+            return res.status(400).send(error.message)
         }
 
         try {
@@ -44,6 +62,39 @@ function adminsControllers() {
         }
     }
 
+    async function updateEmpleado(req, res) {
+        const { idEmpleado } = req.params;
+        const { nombre, apellido, correo } = req.body
+
+        if (!nombre || !apellido || !correo) {
+            return res.status(400).send("No enviaron los datos necesarios")
+        }
+
+        try {
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("apellido").anystring.validateAsync({value: apellido})
+            await validators.validString().email.validateAsync({value: correo})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
+        try {
+            var empleado = await getEmpleadoById(idEmpleado);
+            if (!empleado) return res.status(400).send("El empleado no existe")
+            
+            var empl = new Empleado({ nombre, apellido, identificacion: "l", email: correo })
+            empl.empleado.usuario.password = empleado.usuario.password
+            empl.empleado.identificacion = empleado.identificacion
+            empl.empleado.usuario.salt = empleado.usuario.salt
+            empl.empleado._id = empleado._id
+
+            await updateEmpleadoUS(empl.empleado)
+            return res.status(200).send("Empleado actualizado");
+        } catch (error) {
+            return res.status(error.code).send(error.msg)
+        }
+    }
+
     async function getBancos(req, res) {
         try {
             var result = await getBancosUS()
@@ -57,6 +108,18 @@ function adminsControllers() {
         const { id, nombre, usuario, password, dominio, prueba, transferir } = req.body
         if (!id || !nombre || !usuario || !password || !dominio || !prueba || !transferir ) {
             return res.status(400).send("No se enviaron los datos necesarios")
+        }
+
+        try {
+            await validators.validString("id").anystring.validateAsync({value: id})
+            await validators.validString("dominio").anystring.validateAsync({value: dominio})
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("usuario").anystring.validateAsync({value: usuario})
+            await validators.validString("password").anystring.validateAsync({value: password})
+            await validators.validString("prueba").anystring.validateAsync({value: prueba})
+            await validators.validString("transferir").anystring.validateAsync({value: transferir})
+        } catch (error) {
+            return res.status(400).send(error.message)
         }
 
         try {
@@ -76,11 +139,22 @@ function adminsControllers() {
 
     async function updateBanco(req, res) {
         const { idBanco } = req.params;
-
         const { nombre, usuario, password, dominio, prueba, transferir } = req.body
         if (!nombre || !usuario || !password || !dominio || !prueba || !transferir ) {
             return res.status(400).send("No enviaron los datos necesarios")
         }
+
+        try {
+            await validators.validString("dominio").anystring.validateAsync({value: dominio})
+            await validators.validString("nombre").anystring.validateAsync({value: nombre})
+            await validators.validString("usuario").anystring.validateAsync({value: usuario})
+            await validators.validString("password").anystring.validateAsync({value: password})
+            await validators.validString("prueba").anystring.validateAsync({value: prueba})
+            await validators.validString("transferir").anystring.validateAsync({value: transferir})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         try {
             var bancoss = await getBanco(parseInt(idBanco));
             if (!bancoss) return res.status(400).send("El banco no existe")
@@ -96,7 +170,7 @@ function adminsControllers() {
     }
 
     return Object.freeze({
-        getInfo, addEmpleado, getBancos, addBanco, updateBanco
+        getInfo, addEmpleado, updateEmpleado, getBancos, addBanco, updateBanco, getEmpleados
     })
 }
 

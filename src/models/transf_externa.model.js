@@ -1,15 +1,16 @@
 const uuid = require('uuid');
 const LIMITE = 2000
 
-class TransferenciaInterna {
+class TransferenciaExterna {
 
     constructor (data){
-        this.tranferInt = {
+        this.tranferExt = {
             _id: uuid.v4(),
             moneda: "USD",
             monto: data.monto,
             cuenta_origen: data.origen,
             cuenta_destino: data.destino,
+            banco: data.banco,
             fecha: new Date()
         }
     }
@@ -23,4 +24,4 @@ class TransferenciaInterna {
     }
 }
 
-module.exports = TransferenciaInterna
+module.exports = TransferenciaExterna

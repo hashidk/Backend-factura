@@ -18,6 +18,14 @@ module.exports = function makeUCBancos() {
         }
     };
 
+    async function getBancos4Client( ) {
+        try {
+            return await bancosDB.find({}, {_id:1, nombre:1});
+        } catch (error) {
+            throw error;
+        }
+    };
+
     async function getBancoByName( nombre ) {
         try {
             return await bancosDB.findOne({ nombre });
@@ -47,6 +55,6 @@ module.exports = function makeUCBancos() {
     }
 
     return Object.freeze({
-        getBancos, getBanco, createBanco, updateBanco, getBancoByName
+        getBancos, getBanco, createBanco, updateBanco, getBancoByName, getBancos4Client
     })
   }

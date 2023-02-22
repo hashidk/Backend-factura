@@ -1,3 +1,5 @@
+const validators = require("./validar")
+
 function generatePasswordRand(length) {
     var characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     var pass = "";
@@ -8,5 +10,6 @@ function generatePasswordRand(length) {
 }
 
 module.exports = {
-    generatePasswordRand
+    generatePasswordRand,
+    validators
 }

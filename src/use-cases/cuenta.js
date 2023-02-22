@@ -2,7 +2,8 @@ const handleCollectionDB = require("../data-access")
 const cuentaDB = handleCollectionDB("Cuentas");
 const clienteDB = handleCollectionDB("Clientes");
 const transferenciasIntDB = handleCollectionDB("TransferenciasInternas");
-const {TransferenciaInterna, ErrorHTTP} = require("../models")
+const transferenciasExtDB = handleCollectionDB("TransferenciasExternas");
+const {TransferenciaInterna, ErrorHTTP, TransferenciaExterna} = require("../models")
 const { default: axios } = require("axios");
 
 module.exports = function makeUCCuentas() {
@@ -37,7 +38,7 @@ module.exports = function makeUCCuentas() {
             var cliente = await clienteDB.findOne({identificacion})
             var cuenta = await cuentaDB.findOne({ _id: idCuenta, clientes: { $all: [ cliente._id ] } })
             if (!cuenta) throw new ErrorHTTP("No posee esta cuenta o no es parte de ella", 400)
-            var clientes = await clienteDB.find({ _id: { $in: cuenta.clientes } })
+            var clientes = await clienteDB.find({ _id: { $in: cuenta.clientes } }, {_id:1, nombre:1, apellido:1})
             cuenta.clientes = clientes;
             return cuenta;
         } catch (error) {
@@ -47,7 +48,8 @@ module.exports = function makeUCCuentas() {
 
     async function getCuentasDiffById(idCuenta) {
         try {
-            return await cuentaDB.find({ _id: { $ne: idCuenta } });
+            var cuentas = await cuentaDB.find({ _id: { $ne: idCuenta } });
+            return cuentas;
         } catch (error) {
             throw error;
         }
@@ -93,6 +95,15 @@ module.exports = function makeUCCuentas() {
         }
     }
 
+    async function addTranferenciaExterna(cuentaOrigen, cuentaDestino, monto, banco) {
+        try {
+            const te = new TransferenciaExterna({monto, origen: cuentaOrigen, destino: cuentaDestino, banco})
+            await transferenciasExtDB.insertOne(te.tranferExt)
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async function changeActiveCuenta(_id, activo) {
         try {
             if (activo) {
@@ -125,11 +136,11 @@ module.exports = function makeUCCuentas() {
         }
     }
 
-    async function req_transferir_banco(URL, username, password, monto, cuentaDestino) {
+    async function reqTransferirBanco(URL, username, password, monto, cuentaOrigen, cuentaDestino, nombreBanco) {
         try {
             await axios.post(
                 URL, 
-                {monto, cuentaDestino}, 
+                {monto, cuentaDestino, cuentaOrigen, nombreBanco}, 
                 {
                     withCredentials:true, 
                     auth: {
@@ -138,7 +149,6 @@ module.exports = function makeUCCuentas() {
                       }
                 })
         } catch (error) {
-            // console.log(error);
             throw new ErrorHTTP("No se puedo transferir", 400)
         }
     }
@@ -146,6 +156,6 @@ module.exports = function makeUCCuentas() {
     return Object.freeze({
         getCuentas, getCuentasByCliente, getCuentaById, getCuentaByCliente, getCuentasDiffById,
         createCuenta, transferInternAsTransaction, transferInternAsNonTransaction, updateCuenta,
-        changeActiveCuenta, req_transferir_banco, testBanco
+        changeActiveCuenta, reqTransferirBanco, testBanco, addTranferenciaExterna
     })
   }

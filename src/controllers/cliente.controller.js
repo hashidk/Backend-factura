@@ -2,10 +2,11 @@ const {makeUCClientes, makeUCCuentas, makeUCBancos} = require("../use-cases")
 const { getCliente } = makeUCClientes()
 const { getCuentasByCliente, getCuentaByCliente, getCuentaById, 
     transferInternAsNonTransaction, getCuentasDiffById, updateCuenta,
-    req_transferir_banco, testBanco} = makeUCCuentas();
-const { getBanco } = makeUCBancos()
-
-const {Cliente, User, TransferenciaInterna} = require("../models");
+    reqTransferirBanco, testBanco, addTranferenciaExterna} = makeUCCuentas();
+const { getBanco, getBancos4Client } = makeUCBancos()
+const {TransferenciaInterna,TransferenciaExterna} = require("../models");
+const { validators } = require("../utils");
+require("dotenv").config()
 
 function clientesControllers() {
     async function getInfo(req, res) {
@@ -27,6 +28,15 @@ function clientesControllers() {
         } catch (error) {
             return res.status(error.code).send(error.msg)
         }
+    }
+
+    async function getBancos(req, res) {
+        try {
+            var result = await getBancos4Client()
+            return res.status(200).send(result)
+        } catch (error) {
+            return res.status(error.code).send(error.msg)
+        }  
     }
 
     async function getOtrasCuentas(req, res) {
@@ -61,6 +71,15 @@ function clientesControllers() {
         if (!monto || !cuentaDestino) {
             return res.status(400).send("Enviar todos los datos necesarios")
         }
+        
+        //Validar datos
+        try {
+            await validators.validNumber().monto.validateAsync({value: monto})
+            await validators.validString("cuenta destino").anystring.validateAsync({value: cuentaDestino})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
 
         if (idCuenta === cuentaDestino) {
             return res.status(400).send("No es posible transferir dinero a la misma cuenta")
@@ -111,8 +130,16 @@ function clientesControllers() {
             return res.status(400).send("Enviar todos los datos necesarios")
         }
 
+        //Validar datos
+        try {
+            await validators.validNumber().monto.validateAsync({value: monto})
+            await validators.validString("cuenta destino").anystring.validateAsync({value: cuentaDestino})
+            await validators.validString("banco").anystring.validateAsync({value: banco})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         monto = Math.round(parseFloat(monto)*100)/100
-        // return res.status(200).send(`transferencia realizada desde la cuenta: ${idCuenta}`)
 
         try {
             var cuenta = await getCuentaByCliente(nickname, idCuenta)
@@ -125,7 +152,7 @@ function clientesControllers() {
             }
             
             // Verificar si no excede al limite
-            if (!TransferenciaInterna.verificarLimite(monto)) {
+            if (!TransferenciaExterna.verificarLimite(monto)) {
                 return res.status(400).send("El limite excede a al limite de transferencia")
             }
             
@@ -137,19 +164,22 @@ function clientesControllers() {
             await testBanco(bancoss.dominio+bancoss.prueba)
 
             //Realizar transacción
-            await req_transferir_banco(
+            await reqTransferirBanco(
                 bancoss.dominio+bancoss.transferir, 
                 bancoss.usuario, 
                 bancoss.password, 
                 monto, 
-                cuentaDestino
+                idCuenta,
+                cuentaDestino,
+                process.env.NAME || "Banco de Midas"
             )
 
             //Realizar la transferencia
             cuenta.monto = cuenta.monto - monto;
             await updateCuenta(cuenta)
-
-            // await transferInternAsNonTransaction(cuenta._id, cuenta2._id, monto)
+            
+            //Añadir transferencia
+            await addTranferenciaExterna(idCuenta, cuentaDestino, monto, bancoss.nombre)
             
             return res.status(200).send("Transferencia realizada exitosamente")
 
@@ -164,11 +194,21 @@ function clientesControllers() {
     }
 
     async function receptar_externa(req, res) {
-        var { monto, cuentaDestino } = req.body
-        if (!monto || !cuentaDestino) {
+        var { monto, cuentaDestino, cuentaOrigen, nombreBanco } = req.body
+        if (!monto || !cuentaDestino || !cuentaOrigen || !nombreBanco) {
             return res.status(400).send("Enviar todos los datos necesarios")
         }
-        // return res.status(200).send(`transferencia realizada desde la cuenta: ${idCuenta}`)
+
+        //Validar datos
+        try {
+            await validators.validNumber().monto.validateAsync({value: monto})
+            await validators.validString("cuenta destino").anystring.validateAsync({value: cuentaDestino})
+            await validators.validString("cuenta origen").anystring.validateAsync({value: cuentaOrigen})
+            await validators.validString("banco").anystring.validateAsync({value: nombreBanco})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         monto = Math.round(parseFloat(monto)*100)/100
 
         try {
@@ -183,8 +223,10 @@ function clientesControllers() {
             cuenta2.monto = cuenta2.monto + monto;
             await updateCuenta(cuenta2)
             
-            return res.status(200).send("Se ha añadido el monto")
+            //Añadir transferencia
+            await addTranferenciaExterna(cuentaOrigen, cuentaDestino, monto, nombreBanco)
 
+            return res.status(200).send("Se ha añadido el monto")
         } catch (error) {
             return res.status(error.code).send(error.msg)
         }
@@ -192,7 +234,7 @@ function clientesControllers() {
 
     return Object.freeze({
         getInfo, getCuentas, getCuenta, transferencia_interna, getOtrasCuentas,
-        transferencia_externa, receptar_externa
+        transferencia_externa, receptar_externa, getBancos
     })
 }
 

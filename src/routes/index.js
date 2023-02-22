@@ -18,9 +18,4 @@ router.use("/empleado", middlewares.authorization, rutasEmpleado)
 
 router.use("/administrador", middlewares.authorization, rutasAdmin)
 
-// router.use((req, res, next) => {
-//     // res.status(404).sendFile(__dirname + '/public/404.html');
-//     res.status(404).send("hola")
-// })
-
 module.exports = router

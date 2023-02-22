@@ -7,7 +7,7 @@ module.exports = class Empleado {
             email:    data.email,
             nickname: data.identificacion
         })
-        nuevoUser.encryptPassword(data.password);
+        if (data.password) nuevoUser.encryptPassword(data.password);
 
         this.empleado = {
             _id: uuid.v4(),

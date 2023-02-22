@@ -1,14 +1,22 @@
-const {makeAuthUsers} = require("../use-cases")
+const {makeAuthUsers} = require("../use-cases");
+const { validators } = require("../utils");
 const {verifyCredentialsUser, genJWT} = makeAuthUsers()
 const {cookie_config} = require('./config');
 
 function authControllers() {
     async function loginUser(req, res) {
         var {nickname, password, rol} = req.body
-
         if (!nickname || !password || !rol) 
             return res.status(400).send('Asegurese de ingresar todos los campos')
     
+        try {
+            await validators.validString().identificacion.validateAsync({value: nickname})
+            await validators.validString("password").anystring.validateAsync({value: password})
+            await validators.validString("rol").anystring.validateAsync({value: rol})
+        } catch (error) {
+            return res.status(400).send(error.message)
+        }
+
         try {
             var result = await verifyCredentialsUser(nickname.toLocaleLowerCase(), password, rol)
             return res.cookie("access_token", genJWT(result.nickname, rol), cookie_config)
