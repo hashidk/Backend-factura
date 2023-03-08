@@ -1,15 +1,15 @@
 const makeUCClientes = require("./cliente")
 const makeUCEmpleados = require("./empleado")
 const makeAuthUsers = require("./auth")
-const makeUCCuentas = require("./cuenta")
+const makeUCProducto = require("./producto")
 const makeUCAdmins = require("./admin")
-const makeUCBancos = require("./banco")
+const makeUCFacturas = require("./factura")
 
 module.exports = {
     makeAuthUsers,
     makeUCClientes,
     makeUCEmpleados,
-    makeUCCuentas,
+    makeUCProducto,
     makeUCAdmins,
-    makeUCBancos
+    makeUCFacturas
 }

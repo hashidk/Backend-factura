@@ -15,10 +15,11 @@ module.exports = class Cliente {
             apellido: data.apellido,
             provincia: data.provincia,
             ciudad: data.ciudad,
-            codigo_postal: data.codigo_postal,
+            dir: data.dir,
             identificacion: data.identificacion,
             usuario: nuevoUser.data,
             activo: true,
+            admin_id: data.admin_id,
         }
     }
 }

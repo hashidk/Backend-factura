@@ -14,7 +14,9 @@ module.exports = class Empleado {
             nombre: data.nombre,
             apellido: data.apellido,
             identificacion: data.identificacion,
-            usuario: nuevoUser.data
+            usuario: nuevoUser.data,
+            admin_id: data.admin_id,
+            activo: true
         }
     }
 }

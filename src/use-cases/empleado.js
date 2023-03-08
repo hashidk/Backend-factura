@@ -40,7 +40,7 @@ module.exports = function makeUCEmpleados() {
             const _id = empleado._id
             delete empleado._id
             delete empleado.identificacion
-            delete empleado.identificacion.nickname
+            delete empleado.admin_id
             await empleadoDB.updateOne({ _id }, {$set: empleado});
             return null;    
         } catch (error) {
@@ -48,7 +48,19 @@ module.exports = function makeUCEmpleados() {
         }
     }
 
+    async function changeActiveEmpleado(_id, activo) {
+        try {
+            if (activo) {
+                await empleadoDB.updateOne({_id}, {$set: {activo:false}})
+            }else{
+                await empleadoDB.updateOne({_id}, {$set: {activo:true}})
+            }
+        } catch (error) {
+            throw error; 
+        }
+    }
+
     return Object.freeze({
-        getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado, getEmpleados
+        getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado, getEmpleados, changeActiveEmpleado
     })
   }

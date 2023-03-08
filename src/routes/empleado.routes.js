@@ -8,10 +8,11 @@ rutasEmpleado.post("/clientes", controllers.empleadoControllers().addCliente)
 rutasEmpleado.put("/clientes/:idCliente", controllers.empleadoControllers().updateCliente)
 rutasEmpleado.delete("/clientes/:idCliente", controllers.empleadoControllers().changeStatusCliente)
 
+rutasEmpleado.get("/facturas", controllers.empleadoControllers().getFacturas)
+rutasEmpleado.post("/facturas", controllers.empleadoControllers().addFactura)
+rutasEmpleado.put("/facturas/:idFactura", controllers.empleadoControllers().updateFactura)
+rutasEmpleado.get("/facturas/:idFactura", controllers.empleadoControllers().getFactura)
 
-rutasEmpleado.get("/cuentas", controllers.empleadoControllers().getCuentas)
-rutasEmpleado.post("/cuentas", controllers.empleadoControllers().addCuenta)
-rutasEmpleado.put("/cuentas/:idCuenta", controllers.empleadoControllers().updateCuenta)
-rutasEmpleado.delete("/cuentas/:idCuenta", controllers.empleadoControllers().changeStatusCuenta)
+rutasEmpleado.get("/productos", controllers.empleadoControllers().getProductos)
 
 module.exports = rutasEmpleado;

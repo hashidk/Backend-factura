@@ -39,7 +39,7 @@ function validString(nombre) {
     const password = Joi.object().keys({
         value: Joi.string().empty().min(8).required().messages({
             "any.required": `La contraseña es requerida`,
-            "string.empty": "Este campo no debe estar vacío",
+            "string.empty": "La contraseña no debe estar vacía",
             "string.min": "La contraseña no debe tener una longitud menor a 8",
             "string.base": "La contraseña debe ser un string"
         }),
@@ -69,9 +69,3 @@ function validNumber(nombre) {
 module.exports = {
     validString, validNumber
 }
-
-//   let {error} = validacionUser.validate({
-//     email:    user.email, 
-//     password: user.password, 
-//     nickname: user.nickname
-//   })

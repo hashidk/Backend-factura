@@ -1,10 +1,16 @@
-const { makeUCAdmins, makeUCEmpleados, makeUCBancos } = require("../use-cases")
+const { makeUCAdmins, makeUCEmpleados, makeUCProducto } = require("../use-cases")
 const { getAdmin } = makeUCAdmins()
-const { getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado:updateEmpleadoUS, getEmpleados:getEmpleadosUS} = makeUCEmpleados()
-const { getBancos:getBancosUS, getBanco, getBancoByName, createBanco, updateBanco:updateBancoUS } = makeUCBancos()
+const { 
+    getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado:updateEmpleadoUS, 
+    getEmpleados:getEmpleadosUS, changeActiveEmpleado
+} = makeUCEmpleados()
+const { 
+    getProductos:getProductosUS, getProducto, createProducto, updateProducto:updateProductoUS, 
+    deleteProducto:deleteProductoUS 
+} = makeUCProducto()
 
 const { generatePasswordRand, validators } = require("../utils")
-const {Empleado, Banco} = require("../models")
+const {Empleado, Producto } = require("../models")
 const fs = require('fs');
 
 function adminsControllers() {
@@ -12,25 +18,26 @@ function adminsControllers() {
         const { nickname } = res.locals.user 
         try {
             var result = await getAdmin(nickname)
-            return res.status(200).send(result)
+            return res.status(200).send({data: result})
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }
     }
 
     async function getEmpleados(req, res) {
         try {
             var result = await getEmpleadosUS()
-            return res.status(200).send(result)
+            return res.status(200).send({data: result})
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }
     }
     
     async function addEmpleado(req, res) {
+        const { nickname } = res.locals.user 
         const { nombre, apellido, identificacion, correo } = req.body
         if (!nombre || !apellido || !identificacion || !correo) {
-            return res.status(400).send("No se enviaron los datos necesarios")
+            return res.status(400).send({message: "No se enviaron los datos necesarios"})
         }
 
         try {
@@ -39,12 +46,12 @@ function adminsControllers() {
             await validators.validString().identificacion.validateAsync({value: identificacion})
             await validators.validString().email.validateAsync({value: correo})
         } catch (error) {
-            return res.status(400).send(error.message)
+            return res.status(400).send({message: error.message})
         }
 
         try {
             var empleado = await getEmpleado(identificacion);
-            if (empleado) return res.status(400).send("El empleado ya existe")
+            if (empleado) return res.status(400).send({message: "El empleado ya existe"})
 
             var password = generatePasswordRand(16)
 
@@ -52,13 +59,15 @@ function adminsControllers() {
             const content = `Empleado: Su usuario es: ${identificacion} y su contraseña es: ${password}\n`;
             fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
 
-            var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password })
+            var admin = await getAdmin(nickname)
+
+            var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password, admin_id:admin._id })
 
             await createEmpleado(nuevoEmpleado.empleado)
 
-            return res.status(200).send("Se ha creado un nuevo empleado")
+            return res.status(200).send({message: "Se ha creado un nuevo empleado"})
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }
     }
 
@@ -67,7 +76,7 @@ function adminsControllers() {
         const { nombre, apellido, correo } = req.body
 
         if (!nombre || !apellido || !correo) {
-            return res.status(400).send("No enviaron los datos necesarios")
+            return res.status(400).send({message: "No enviaron los datos necesarios"})
         }
 
         try {
@@ -75,102 +84,115 @@ function adminsControllers() {
             await validators.validString("apellido").anystring.validateAsync({value: apellido})
             await validators.validString().email.validateAsync({value: correo})
         } catch (error) {
-            return res.status(400).send(error.message)
+            return res.status(400).send({message: error.message})
         }
 
         try {
             var empleado = await getEmpleadoById(idEmpleado);
-            if (!empleado) return res.status(400).send("El empleado no existe")
+            if (!empleado) return res.status(400).send({message: "El empleado no existe"})
             
-            var empl = new Empleado({ nombre, apellido, identificacion: "l", email: correo })
+            var empl = new Empleado({ nombre, apellido, identificacion: "l", email: correo, admin_id:"l" })
             empl.empleado.usuario.password = empleado.usuario.password
+            empl.empleado.usuario.nickname = empleado.usuario.nickname
             empl.empleado.identificacion = empleado.identificacion
             empl.empleado.usuario.salt = empleado.usuario.salt
+            empl.empleado.admin_id = empleado.admin_id
             empl.empleado._id = empleado._id
 
             await updateEmpleadoUS(empl.empleado)
-            return res.status(200).send("Empleado actualizado");
+            return res.status(200).send({message: "Empleado actualizado"});
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }
     }
 
-    async function getBancos(req, res) {
+    async function changeStatusEmpleado(req, res) {
+        const { idEmpleado } = req.params;
         try {
-            var result = await getBancosUS()
-            return res.status(200).send(result)
+            var empleado = await getEmpleadoById(idEmpleado);
+            if (!empleado) return res.status(400).send({message:"El empleado no existe"})
+
+            await changeActiveEmpleado(idEmpleado, empleado.activo)
+
+            return res.status(200).send({message:`Cuenta ${empleado.activo ? "desactivada" : "activada"}`});
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message:error.msg})
         }
     }
 
-    async function addBanco(req, res) {
-        const { id, nombre, usuario, password, dominio, prueba, transferir } = req.body
-        if (!id || !nombre || !usuario || !password || !dominio || !prueba || !transferir ) {
-            return res.status(400).send("No se enviaron los datos necesarios")
+    async function getProductos(req, res) {
+        try {
+            var result = await getProductosUS()
+            return res.status(200).send({data: result})
+        } catch (error) {
+            return res.status(error.code).send({message: error.msg})
+        }
+    }
+
+    async function deleteProducto(req, res) {
+        const { idProducto } = req.params;
+        try {
+            await deleteProductoUS(idProducto)
+            return res.status(200).send({message: "Producto eliminado"})
+        } catch (error) {
+            return res.status(error.code).send({message: error.msg})
+        }
+    }
+
+    async function addProducto(req, res) {
+        const { descripcion, precio } = req.body
+        if (!descripcion || !precio) {
+            return res.status(400).send({message: "No se enviaron los datos necesarios"})
         }
 
         try {
-            await validators.validString("id").anystring.validateAsync({value: id})
-            await validators.validString("dominio").anystring.validateAsync({value: dominio})
-            await validators.validString("nombre").anystring.validateAsync({value: nombre})
-            await validators.validString("usuario").anystring.validateAsync({value: usuario})
-            await validators.validString("password").anystring.validateAsync({value: password})
-            await validators.validString("prueba").anystring.validateAsync({value: prueba})
-            await validators.validString("transferir").anystring.validateAsync({value: transferir})
+            await validators.validString("descripcion").anystring.validateAsync({value: descripcion})
+            await validators.validNumber().monto.validateAsync({value: precio})
         } catch (error) {
-            return res.status(400).send(error.message)
+            return res.status(400).send({message: error.message})
         }
 
+        const { nickname } = res.locals.user 
         try {
-            var bancoss = await getBanco(id);
-            if (bancoss) return res.status(400).send("El banco externo ya existe con ese id")
-
-
-            var nuevoBanco = new Banco({ id, nombre, usuario, password, dominio, prueba, transferir })
-
-            await createBanco(nuevoBanco.bank)
-
-            return res.status(200).send("Se ha creado un nuevo banco")
+            var admin = await getAdmin(nickname)
+            var nuevoproducto = new Producto({ descripcion, precio, _id: admin._id })
+            await createProducto(nuevoproducto.prod)
+            return res.status(200).send({message: "Se ha creado un nuevo Producto"})
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }   
     }
 
-    async function updateBanco(req, res) {
-        const { idBanco } = req.params;
-        const { nombre, usuario, password, dominio, prueba, transferir } = req.body
-        if (!nombre || !usuario || !password || !dominio || !prueba || !transferir ) {
-            return res.status(400).send("No enviaron los datos necesarios")
+    async function updateProducto(req, res) {
+        const { idProducto } = req.params;
+        const { descripcion, precio } = req.body
+        if (!descripcion || !precio) {
+            return res.status(400).send({message: "No se enviaron los datos necesarios"})
         }
 
         try {
-            await validators.validString("dominio").anystring.validateAsync({value: dominio})
-            await validators.validString("nombre").anystring.validateAsync({value: nombre})
-            await validators.validString("usuario").anystring.validateAsync({value: usuario})
-            await validators.validString("password").anystring.validateAsync({value: password})
-            await validators.validString("prueba").anystring.validateAsync({value: prueba})
-            await validators.validString("transferir").anystring.validateAsync({value: transferir})
+            await validators.validString("descripcion").anystring.validateAsync({value: descripcion})
+            await validators.validNumber().monto.validateAsync({value: precio})
         } catch (error) {
-            return res.status(400).send(error.message)
+            return res.status(400).send({message: error.message})
         }
 
         try {
-            var bancoss = await getBanco(parseInt(idBanco));
-            if (!bancoss) return res.status(400).send("El banco no existe")
+            var producto = await getProducto(idProducto);
+            if (!producto) return res.status(400).send({message: "El producto no existe"})
             
-            var nuevoBanco = new Banco({ id: bancoss._id, nombre, usuario, password, dominio, prueba, transferir })
+            var nuevoproducto = new Producto({ descripcion, precio })
 
-
-            await updateBancoUS(nuevoBanco.bank)
-            return res.status(200).send("Banco actualizado");
+            await updateProductoUS(nuevoproducto.prod)
+            return res.status(200).send({message: "Producto actualizado"});
         } catch (error) {
-            return res.status(error.code).send(error.msg)
+            return res.status(error.code).send({message: error.msg})
         }
     }
 
     return Object.freeze({
-        getInfo, addEmpleado, updateEmpleado, getBancos, addBanco, updateBanco, getEmpleados
+        getInfo, addEmpleado, updateEmpleado, getProductos, addProducto, updateProducto, 
+        getEmpleados, deleteProducto, changeStatusEmpleado
     })
 }
 

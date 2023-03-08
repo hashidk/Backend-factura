@@ -1,15 +1,13 @@
 const User = require("./user.model")
 const Cliente = require("./cliente.model")
-const Cuenta = require("./cuenta.model")
+const Producto = require("./producto.model")
 const Empleado = require("./empleado.model")
-const TransferenciaInterna = require("./transf_interna.model")
-const TransferenciaExterna = require("./transf_externa.model")
+const Administrador = require("./admin.model")
 
 const ErrorHTTP = require("./error.model")
 const Email = require("./mail.model")
-const Banco = require("./banco.model")
+const Factura = require("./factura.model")
 
 module.exports = {
-    User, Cliente, Empleado, Cuenta, TransferenciaInterna, ErrorHTTP, Email, Banco, 
-    TransferenciaExterna
+    User, Cliente, Empleado, Producto, ErrorHTTP, Email, Factura, Administrador
 }

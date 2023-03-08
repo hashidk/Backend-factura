@@ -1,4 +1,5 @@
 const validators = require("./validar")
+const crearFactura = require("./factura")
 
 function generatePasswordRand(length) {
     var characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -11,5 +12,6 @@ function generatePasswordRand(length) {
 
 module.exports = {
     generatePasswordRand,
-    validators
+    validators,
+    crearFactura
 }
