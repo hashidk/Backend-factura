@@ -37,6 +37,7 @@ function authControllers() {
     async function registerUser(req, res) {
         // const { image } = req.files;
         const {nombre, apellido, identificacion, empresa_nombre, empresa_dir, empresa_ciudad, empresa_provincia, empresa_pais, password, confirm_password, email} = req.body
+        console.log(req.body);
         if (!nombre || !apellido || !identificacion || !empresa_nombre || !empresa_dir || !empresa_ciudad || !empresa_provincia || !empresa_pais || !password || !confirm_password || !email) 
             return res.status(400).send({message: 'Asegúrese de ingresar todos los campos'})
         // if (!image) {
@@ -57,6 +58,7 @@ function authControllers() {
             await validators.validString().password.validateAsync({value: password})
             await validators.validString().email.validateAsync({value: email})
         } catch (error) {
+            console.log(error);
             return res.status(400).send({message: error.message})
         }
 

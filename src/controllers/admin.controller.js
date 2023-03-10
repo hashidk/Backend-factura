@@ -175,6 +175,7 @@ function adminsControllers() {
         const { nickname } = res.locals.user 
         const { idProducto } = req.params;
         const { descripcion, precio } = req.body
+        console.log(req.body);
         if (!descripcion || !precio) {
             return res.status(400).send({message: "No se enviaron los datos necesarios"})
         }
@@ -191,8 +192,7 @@ function adminsControllers() {
             var producto = await getProducto(idProducto, admin._id);
             if (!producto) return res.status(400).send({message: "El producto no existe"})
             
-            var nuevoproducto = new Producto({ descripcion, precio })
-
+            var nuevoproducto = new Producto({ descripcion, precio, _id: admin._id})
             await updateProductoUS(nuevoproducto.prod)
             return res.status(200).send({message: "Producto actualizado"});
         } catch (error) {

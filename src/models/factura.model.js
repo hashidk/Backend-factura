@@ -4,6 +4,7 @@ const path = require("path")
 module.exports = class Factura {
     constructor (data){
         var subtotal = 0;
+        var id = uuid.v4()
 
         data.items.forEach(element => {
             subtotal += element.cantidad*element.precio
@@ -13,7 +14,7 @@ module.exports = class Factura {
             empresa: data.empresa,
             cliente: data.cliente,
             vendedor: data.vendedor,
-            invoicer_nr: data.nfactura,
+            invoicer_nr: id,
             subtotal: subtotal,
             productos: data.items,
             fecha: new Date(),
@@ -21,7 +22,7 @@ module.exports = class Factura {
 
 
         this.invoice = {
-            _id: uuid.v4(),
+            _id: id,
             empresa: data.empresa._id,
             cliente: data.cliente._id,
             vendedor: data.vendedor._id,

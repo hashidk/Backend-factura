@@ -44,7 +44,7 @@ function generateCustomerInformation(doc, invoice, _y, margin_top = 80) {
         .text(`FECHA:`, 350, y+15)
         .text(`FECHA VENCIMIENTO:`, 350, y+30)
 
-    doc.fillColor('black').fontSize(10).text(`${invoice.invoice_nr}`, 350, y, {align: 'right'})
+    doc.fillColor('black').fontSize(10).text(`${invoice.invoicer_nr.slice(0, 8)}`, 350, y, {align: 'right'})
         .text(`${invoice.fecha.toLocaleDateString()}`, 350, y+15, {align: 'right'})
         .text(`${invoice.fecha.toLocaleDateString()}`, 350, y+30, {align: 'right'})
     return y+45
