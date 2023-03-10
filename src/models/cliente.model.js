@@ -5,7 +5,7 @@ module.exports = class Cliente {
     constructor (data){
         var nuevoUser = new User({
             email:    data.email,
-            nickname: data.identificacion
+            nickname: data.nickname ? data.nickname : data.identificacion
         })
         if (data.password) nuevoUser.encryptPassword(data.password);
 

@@ -2,17 +2,33 @@ const handleCollectionDB = require("../data-access")
 const empleadoDB = handleCollectionDB("Empleados");
 
 module.exports = function makeUCEmpleados() {
-    async function getEmpleado(identificacion) {
+    async function getMiEmpleado(nickname) {
         try {
-            return await empleadoDB.findOne({identificacion});
+            return await empleadoDB.findOne({'usuario.nickname':nickname});
         } catch (error) {
             throw error;
         }
     };
 
-    async function getEmpleados() {
+    async function getEmpleado(identificacion, admin_id) {
         try {
-            return await empleadoDB.find({});
+            return await empleadoDB.findOne({identificacion, admin_id});
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    async function getEmpleado(identificacion, admin_id) {
+        try {
+            return await empleadoDB.findOne({identificacion, admin_id});
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    async function getEmpleados(admin_id) {
+        try {
+            return await empleadoDB.find({admin_id});
         } catch (error) {
             throw error;
         }
@@ -27,9 +43,9 @@ module.exports = function makeUCEmpleados() {
         }
     }
 
-    async function getEmpleadoById(_id) {
+    async function getEmpleadoById(_id, admin_id) {
         try {
-            return await empleadoDB.findOne({_id});
+            return await empleadoDB.findOne({_id, admin_id});
         } catch (error) {
             throw error;
         }
@@ -61,6 +77,7 @@ module.exports = function makeUCEmpleados() {
     }
 
     return Object.freeze({
-        getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado, getEmpleados, changeActiveEmpleado
+        getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado, getEmpleados, changeActiveEmpleado,
+        getMiEmpleado
     })
   }

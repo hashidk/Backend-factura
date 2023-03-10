@@ -20,13 +20,13 @@ const authorization = async (req, res, next) => {
     try {
       switch (data.rol) {
         case "cliente":
-            user = await clienteDB.findOne({ identificacion: data.nickname })
+            user = await clienteDB.findOne({ 'usuario.nickname': data.nickname })
             break;
         case "empleado":
-            user = await empleadoDB.findOne({ identificacion: data.nickname })
+            user = await empleadoDB.findOne({ 'usuario.nickname': data.nickname })
             break;
         case "administrador":
-            user = await adminDB.findOne({ identificacion: data.nickname })
+            user = await adminDB.findOne({ 'usuario.nickname': data.nickname })
             break;
         default:
             return res.status(400).send({message: "Rol incorrecto"});

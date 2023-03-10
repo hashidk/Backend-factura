@@ -2,26 +2,35 @@ const handleCollectionDB = require("../data-access");
 const clienteDB = handleCollectionDB("Clientes")
 
 module.exports = function makeUCClientes() {
-    async function getCliente(identificacion) {
+    async function getMiCliente(nickname) {
         try {
-            var cliente = await clienteDB.findOne({identificacion})
+            var cliente = await clienteDB.findOne({'usuario.nickname':nickname})
             return cliente;
         } catch (error) {
             throw error;
         }
     };
 
-    async function getClientes() {
+    async function getCliente(identificacion, admin_id) {
         try {
-            return await clienteDB.find({});
+            var cliente = await clienteDB.findOne({identificacion, admin_id})
+            return cliente;
         } catch (error) {
             throw error;
         }
     };
 
-    async function getClienteById(_id) {
+    async function getClientes(admin_id) {
         try {
-            return  await clienteDB.findOne({_id});
+            return await clienteDB.find({admin_id});
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    async function getClienteById(_id, admin_id) {
+        try {
+            return  await clienteDB.findOne({_id, admin_id});
         } catch (error) {
             throw error;
         }
@@ -67,5 +76,6 @@ module.exports = function makeUCClientes() {
         getCliente,
         changeActiveCliente,
         updateCliente,
+        getMiCliente
     })
   }

@@ -4,7 +4,7 @@ const {verifyCredentialsUser, genJWT} = makeAuthUsers();
 const { getAdmin, createAdmin } = makeUCAdmins();
 const { getCookieConfig} = require('./config');
 const path = require('path');
-const { Administrador } = require("../models")
+const { Administrador, Email } = require("../models")
 const fs = require('fs');
 require("dotenv").config()
 
@@ -16,7 +16,7 @@ function authControllers() {
             return res.status(400).send({message: 'Asegurese de ingresar todos los campos'})
     
         try {
-            await validators.validString().identificacion.validateAsync({value: nickname})
+            await validators.validString("identificacion").anystring.validateAsync({value: nickname})
             await validators.validString("password").anystring.validateAsync({value: password})
             await validators.validString("rol").anystring.validateAsync({value: rol})
         } catch (error) {
@@ -24,7 +24,7 @@ function authControllers() {
         }
 
         try {
-            var result = await verifyCredentialsUser(nickname.toLocaleLowerCase(), password, rol)
+            var result = await verifyCredentialsUser(nickname, password, rol)
             return res.cookie("access_token", genJWT(result.nickname, rol), getCookieConfig(process.env.MODE === "production"))
                       .status(200).send({message: "Usuario autenticado", rol})
 
@@ -35,7 +35,7 @@ function authControllers() {
     }
     
     async function registerUser(req, res) {
-        const { image } = req.files;
+        // const { image } = req.files;
         const {nombre, apellido, identificacion, empresa_nombre, empresa_dir, empresa_ciudad, empresa_provincia, empresa_pais, password, confirm_password, email} = req.body
         if (!nombre || !apellido || !identificacion || !empresa_nombre || !empresa_dir || !empresa_ciudad || !empresa_provincia || !empresa_pais || !password || !confirm_password || !email) 
             return res.status(400).send({message: 'Asegúrese de ingresar todos los campos'})
@@ -61,18 +61,18 @@ function authControllers() {
         }
 
         var file_name, path_img;
-        if (!image) {
+        // if (!image) {
             path_img = "logo.png";
-        } else {
-            if (!(/^image/.test(image.mimetype))) return res.status(400).send({message: "El archivo que subió no es una imagen"});
-            path_img = generatePasswordRand(8)+image.name;
-            file_name = path.join(appPathRoot,'logos', path_img);
-            try {
-                image.mv(file_name);
-            } catch (error) {
-                return res.status(500).send({message: "No se pudo subir la imagen"})
-            }
-        }
+        // } else {
+        //     if (!(/^image/.test(image.mimetype))) return res.status(400).send({message: "El archivo que subió no es una imagen"});
+        //     path_img = generatePasswordRand(8)+image.name;
+        //     file_name = path.join(appPathRoot,'logos', path_img);
+        //     try {
+        //         image.mv(file_name);
+        //     } catch (error) {
+        //         return res.status(500).send({message: "No se pudo subir la imagen"})
+        //     }
+        // }
 
         try {
             var admin = await getAdmin(identificacion);
@@ -81,6 +81,7 @@ function authControllers() {
             //Enviar correo
             const content = `Administrador: Su usuario es: ${identificacion} y su contraseña es: ${password}\n`;
             fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
+            new Email(email, identificacion, password).sendmail();
 
             var nuevoAdmin = new Administrador({ 
                 nombre, apellido, identificacion, email, password, empresa_nombre,empresa_dir,empresa_ciudad,

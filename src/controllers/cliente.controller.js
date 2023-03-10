@@ -1,5 +1,5 @@
 const {makeUCClientes, makeUCFacturas, } = require("../use-cases")
-const { getCliente } = makeUCClientes()
+const { getMiCliente } = makeUCClientes()
 const { getFacturas:getFacturasUS,getFacturasByEmpresaAndCliente, getFacturasByEmpresaAndClienteAndId } = makeUCFacturas();
 const fs = require("fs")
 const path = require("path")
@@ -10,7 +10,7 @@ function clientesControllers() {
         const { nickname } = res.locals.user 
 
         try {
-            var result = await getCliente(nickname)
+            var result = await getMiCliente(nickname)
             return res.status(200).send({data: result})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
@@ -20,7 +20,7 @@ function clientesControllers() {
     async function getFacturas(req, res) {
         const { nickname } = res.locals.user 
         try {
-            var cliente = await getCliente(nickname)
+            var cliente = await getMiCliente(nickname)
             var result = await getFacturasByEmpresaAndCliente( cliente.admin_id, cliente._id)
             return res.status(200).send({data: result})
         } catch (error) {
@@ -33,7 +33,7 @@ function clientesControllers() {
         const { idFactura} = req.params;
 
         try {
-            var cliente = await getCliente(nickname)
+            var cliente = await getMiCliente(nickname)
             var factura = await getFacturasByEmpresaAndClienteAndId( cliente.admin_id, cliente._id, idFactura)
             if (!factura) {return res.status(400).send({message: "Esa factura no le pertenece"})}
             var path_file = path.join(appPathRoot, 'facturas', factura.path);

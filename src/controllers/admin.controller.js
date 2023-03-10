@@ -10,7 +10,7 @@ const {
 } = makeUCProducto()
 
 const { generatePasswordRand, validators } = require("../utils")
-const {Empleado, Producto } = require("../models")
+const {Empleado, Producto, Email } = require("../models")
 const fs = require('fs');
 
 function adminsControllers() {
@@ -25,8 +25,10 @@ function adminsControllers() {
     }
 
     async function getEmpleados(req, res) {
+        const { nickname } = res.locals.user 
         try {
-            var result = await getEmpleadosUS()
+            var admin = await getAdmin(nickname)
+            var result = await getEmpleadosUS(admin._id)
             return res.status(200).send({data: result})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
@@ -50,18 +52,18 @@ function adminsControllers() {
         }
 
         try {
-            var empleado = await getEmpleado(identificacion);
+            var admin = await getAdmin(nickname)
+            var empleado = await getEmpleado(identificacion, admin._id);
             if (empleado) return res.status(400).send({message: "El empleado ya existe"})
 
             var password = generatePasswordRand(16)
 
             //Enviar correo
-            const content = `Empleado: Su usuario es: ${identificacion} y su contraseña es: ${password}\n`;
+            const content = `Empleado: Su usuario es: ${admin._id.slice(0,8)+identificacion} y su contraseña es: ${password}\n`;
             fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
-
-            var admin = await getAdmin(nickname)
-
-            var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password, admin_id:admin._id })
+            
+            var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password, admin_id:admin._id, nickname:admin._id.slice(0,8)+identificacion })
+            new Email(correo, admin._id.slice(0,8)+identificacion, password)
 
             await createEmpleado(nuevoEmpleado.empleado)
 
@@ -72,6 +74,7 @@ function adminsControllers() {
     }
 
     async function updateEmpleado(req, res) {
+        const { nickname } = res.locals.user 
         const { idEmpleado } = req.params;
         const { nombre, apellido, correo } = req.body
 
@@ -88,7 +91,8 @@ function adminsControllers() {
         }
 
         try {
-            var empleado = await getEmpleadoById(idEmpleado);
+            var admin = await getAdmin(nickname)
+            var empleado = await getEmpleadoById(idEmpleado, admin._id);
             if (!empleado) return res.status(400).send({message: "El empleado no existe"})
             
             var empl = new Empleado({ nombre, apellido, identificacion: "l", email: correo, admin_id:"l" })
@@ -107,9 +111,11 @@ function adminsControllers() {
     }
 
     async function changeStatusEmpleado(req, res) {
-        const { idEmpleado } = req.params;
+        const { nickname } = res.locals.user 
+        const { idEmpleado } = req.params;        
         try {
-            var empleado = await getEmpleadoById(idEmpleado);
+            var admin = await getAdmin(nickname)
+            var empleado = await getEmpleadoById(idEmpleado, admin._id);
             if (!empleado) return res.status(400).send({message:"El empleado no existe"})
 
             await changeActiveEmpleado(idEmpleado, empleado.activo)
@@ -121,8 +127,10 @@ function adminsControllers() {
     }
 
     async function getProductos(req, res) {
+        const { nickname } = res.locals.user 
         try {
-            var result = await getProductosUS()
+            var admin = await getAdmin(nickname)
+            var result = await getProductosUS(admin._id)
             return res.status(200).send({data: result})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
@@ -164,6 +172,7 @@ function adminsControllers() {
     }
 
     async function updateProducto(req, res) {
+        const { nickname } = res.locals.user 
         const { idProducto } = req.params;
         const { descripcion, precio } = req.body
         if (!descripcion || !precio) {
@@ -178,7 +187,8 @@ function adminsControllers() {
         }
 
         try {
-            var producto = await getProducto(idProducto);
+            var admin = await getAdmin(nickname)
+            var producto = await getProducto(idProducto, admin._id);
             if (!producto) return res.status(400).send({message: "El producto no existe"})
             
             var nuevoproducto = new Producto({ descripcion, precio })

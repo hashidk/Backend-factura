@@ -2,25 +2,25 @@ const handleCollectionDB = require("../data-access")
 const productosDB = handleCollectionDB("Productos");
 
 module.exports = function makeUCProductos() {
-    async function getProducto( _id ) {
+    async function getProducto( _id, admin_id ) {
         try {
-            return await productosDB.findOne({ _id });
+            return await productosDB.findOne({ _id, admin_id });
         } catch (error) {
             throw error;
         }
     };
 
-    async function getProductos() {
+    async function getProductos(admin_id) {
         try {
-            return await productosDB.find({});
+            return await productosDB.find({admin_id});
         } catch (error) {
             throw error;
         }
     };
 
-    async function getProductosByAdmin(_id) {
+    async function getProductosByAdmin(admin_id) {
         try {
-            return await productosDB.find({admin_id: _id});
+            return await productosDB.find({admin_id});
         } catch (error) {
             throw error;
         }

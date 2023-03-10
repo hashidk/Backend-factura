@@ -1,5 +1,5 @@
 const { makeUCEmpleados, makeUCClientes, makeUCFacturas, makeUCProducto, makeUCAdmins } = require("../use-cases")
-const { getEmpleado } = makeUCEmpleados()
+const { getMiEmpleado, getEmpleadoById } = makeUCEmpleados()
 const { getClientes:getClientesUS, getCliente, createCliente, getClienteById, updateCliente:updateClienteUS, changeActiveCliente } = makeUCClientes()
 const { createFactura, getFactura:getFacturaUS, getFacturasByEmpresa, getFacturas:getFacturasUS, 
     updateFactura:updateFacturaUS, getFacturaByEmpresaAndId } = makeUCFacturas();
@@ -7,7 +7,7 @@ const { getProducto, getProductos:getProductosUS, getProductosWithArray, getProd
 const { getAdmin, getAdminById } = makeUCAdmins()
 
 const { generatePasswordRand, validators } = require("../utils")
-const { Cliente, Factura } = require("../models")
+const { Cliente, Factura, Email } = require("../models")
 const fs = require('fs');
 const path = require("path");
 var idfac = 1
@@ -16,7 +16,7 @@ function empleadosControllers() {
     async function getInfo(req, res) {
         const { nickname } = res.locals.user
         try {
-            var result = await getEmpleado(nickname)
+            var result = await getMiEmpleado(nickname)
             return res.status(200).send({data: result})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
@@ -24,8 +24,10 @@ function empleadosControllers() {
     }
 
     async function getClientes(req, res) {
+        const { nickname } = res.locals.user
         try {
-            var result = await getClientesUS()
+            var empleado = await getMiEmpleado(nickname);
+            var result = await getClientesUS(empleado.admin_id)
             return res.status(200).send({data: result})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
@@ -52,18 +54,19 @@ function empleadosControllers() {
         }
 
         try {
-            var cliente = await getCliente(identificacion);
+            var empleado = await getMiEmpleado(nickname);
+            var cliente = await getCliente(identificacion, empleado.admin_id);
             if (cliente) return res.status(400).send({message: "El cliente ya existe"})
 
             var password = generatePasswordRand(16)
 
             //Enviar correo
-            const content = `Cliente: Su usuario es: ${identificacion} y su contraseña es: ${password}\n`;
-            fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
-
-            var empleado = await getEmpleado(nickname);
             var admin = await getAdminById(empleado.admin_id);
-            var nuevoCliente = new Cliente({ nombre, apellido, provincia, ciudad, dir, identificacion, email: correo, password, admin_id: admin._id})
+            const content = `Cliente: Su usuario es: ${admin._id.slice(0, 8)+identificacion} y su contraseña es: ${password}\n`;
+            fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
+            new Email( correo, admin._id.slice(0, 8)+identificacion, password)
+
+            var nuevoCliente = new Cliente({ nombre, apellido, provincia, ciudad, dir, identificacion, email: correo, password, admin_id: admin._id, nickname: admin._id.slice(0, 8)+identificacion})
 
             await createCliente(nuevoCliente.cliente)
 
@@ -76,6 +79,7 @@ function empleadosControllers() {
 
     async function updateCliente(req, res) {
         const { idCliente } = req.params;
+        const { nickname } = res.locals.user
 
         const { nombre, apellido, provincia, ciudad, dir, correo } = req.body
         if (!nombre || !apellido || !provincia || !ciudad || !dir || !correo) {
@@ -94,7 +98,8 @@ function empleadosControllers() {
         }
 
         try {
-            var cliente = await getClienteById(idCliente);
+            var empleado = await getMiEmpleado(nickname);
+            var cliente = await getClienteById(idCliente, empleado.admin_id);
             if (!cliente) return res.status(400).send({message: "El cliente no existe"})
             
             var clnt = new Cliente({ nombre, apellido, provincia, ciudad, dir, identificacion: "l", email: correo, admin_id:"l" })
@@ -114,8 +119,11 @@ function empleadosControllers() {
 
     async function changeStatusCliente(req, res) {
         const { idCliente } = req.params;
+        const { nickname } = res.locals.user
+
         try {
-            var cliente = await getClienteById(idCliente);
+            var empleado = await getMiEmpleado(nickname);
+            var cliente = await getClienteById(idCliente, empleado.admin_id);
             if (!cliente) return res.status(400).send({message: "El cliente no existe"})
 
             await changeActiveCliente(idCliente, cliente.activo)
@@ -129,7 +137,7 @@ function empleadosControllers() {
     async function getFacturas(req, res) {
         const { nickname } = res.locals.user
         try {
-            var empleado = await getEmpleado(nickname);
+            var empleado = await getMiEmpleado(nickname);
             var admin = await getAdminById(empleado.admin_id);
             var result = await getFacturasByEmpresa(admin._id)
             return res.status(200).send({data: result})
@@ -167,9 +175,9 @@ function empleadosControllers() {
                 getProd[index]['cantidad'] = productos[index].cantidad;
             });
 
-            var empleado = await getEmpleado(nickname);
+            var empleado = await getMiEmpleado(nickname);
             delete empleado.usuario;
-            var cliente = await getClienteById(clienteid);
+            var cliente = await getClienteById(clienteid, empleado.admin_id);
             if (!cliente) {return res.status(400).send({message: "No existe el cliente"});}
             delete cliente.usuario;
             var admin = await getAdminById(empleado.admin_id);
@@ -211,27 +219,31 @@ function empleadosControllers() {
                     getProd[index]['cantidad'] = productos[index].cantidad;
                 });
     
-                var factura = getFacturaUS(idFactura)
-                var empleado = await getEmpleado(factura.vendedor);
+                var factura = await getFacturaUS(idFactura)
+                if (!factura) {return res.status(400).send({message: "No existe la factura"});}
+                var empleado = await getEmpleadoById(factura.vendedor, factura.empresa);
                 delete empleado.usuario;
-                var cliente = await getClienteById(factura.cliente);
+                var cliente = await getClienteById(factura.cliente, empleado.admin_id);
                 if (!cliente) {return res.status(400).send({message: "No existe el cliente"});}
                 delete cliente.usuario;
-                var admin = await getAdminById(factura.admin);
-                delete admin._id; delete admin.nombre; delete admin.apellido
+                var admin = await getAdminById(factura.empresa);
+                delete admin.nombre; delete admin.apellido
                 delete admin.identificacion; delete admin.usuario;
     
                 const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: getProd})
+                delete nuevaFactura.invoice._id; 
+                delete nuevaFactura.invoice.invoicer_nr, 
+                delete nuevaFactura.invoice.empresa,
                 await createFactura(nuevaFactura.invoice)
             }else{
                 var factura = getFacturaUS(idFactura)
-                var empleado = await getEmpleado(factura.vendedor);
+                var empleado = await getEmpleadoById(factura.vendedor, factura.empresa);
                 delete empleado.usuario;
-                var cliente = await getClienteById(factura.cliente);
+                var cliente = await getClienteById(factura.cliente, empleado.admin_id);
                 if (!cliente) {return res.status(400).send({message: "No existe el cliente"});}
                 delete cliente.usuario;
-                var admin = await getAdmin(factura.admin);
-                delete admin._id; delete admin.nombre; delete admin.apellido
+                var admin = await getAdmin(factura.empresa);
+                delete admin.nombre; delete admin.apellido
                 delete admin.identificacion; delete admin.usuario;
     
                 const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: []})
@@ -239,6 +251,7 @@ function empleadosControllers() {
             }
             return res.status(200).send({message: "Factura actualizada"});
         } catch (error) {
+            console.log(error);
             return res.status(error.code).send({message: error.msg})
         }
     }
@@ -247,7 +260,7 @@ function empleadosControllers() {
         const { nickname } = res.locals.user
 
         try {
-            var empleado = await getEmpleado(nickname);
+            var empleado = await getMiEmpleado(nickname);
             var result = await getProductosByAdmin(empleado.admin_id)
             return res.status(200).send({data: result})
         } catch (error) {
@@ -259,7 +272,7 @@ function empleadosControllers() {
         const { nickname } = res.locals.user
         const { idFactura } = req.params;
         try {
-            var empleado = await getEmpleado(nickname);
+            var empleado = await getMiEmpleado(nickname);
             var factura = await getFacturaByEmpresaAndId(empleado.admin_id, idFactura)
             if (!factura) {return res.status(400).send({message: "Esa factura no le pertenece"})}
             var path_file = path.join(appPathRoot, 'facturas', factura.path);

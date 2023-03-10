@@ -13,7 +13,7 @@ module.exports = function makeAuthUsers() {
         
         try {
             var user = null
-            const query = { identificacion: nickname }
+            const query = { 'usuario.nickname':nickname }
             const proyection = {id_:1, usuario:1, activo:1}
             switch (rol) {
                 case "cliente":
