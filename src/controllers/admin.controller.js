@@ -175,7 +175,6 @@ function adminsControllers() {
         const { nickname } = res.locals.user 
         const { idProducto } = req.params;
         const { descripcion, precio } = req.body
-        console.log(req.body);
         if (!descripcion || !precio) {
             return res.status(400).send({message: "No se enviaron los datos necesarios"})
         }

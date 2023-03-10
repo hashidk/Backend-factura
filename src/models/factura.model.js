@@ -38,7 +38,7 @@ module.exports = class Factura {
     //Crear factura y retornar la dirección
     crearPDF(invoice){
         console.log(invoice);
-        var _path_local = invoice.cliente.apellido + invoice.cliente.nombre + "_" + invoice.fecha.toLocaleDateString().split("/").join("-") + '_factura.pdf';
+        var _path_local = invoice.cliente.apellido + invoice.cliente.nombre + "_" + invoice.fecha.toLocaleDateString().split("/").join("-")+Math.floor(Math.random()*1000)+ '_factura.pdf';
         crearFactura(invoice, path.join(appPathRoot, 'facturas', _path_local))
         return _path_local;
     }
