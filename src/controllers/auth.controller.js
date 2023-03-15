@@ -68,7 +68,7 @@ function authControllers() {
 
             //Enviar correo
             const content = `Administrador: Su usuario es: ${identificacion} y su contraseña es: ${password}\n`;
-            fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
+            fs.writeFile('./credencialesgeneradas.txt', content, { flag: 'a+' }, err => console.error(err));
             new Email(email, identificacion, password).sendmail();
 
             var nuevoAdmin = new Administrador({ 

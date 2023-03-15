@@ -77,7 +77,7 @@ function adminsControllers() {
 
             //Enviar correo
             const content = `Empleado: Su usuario es: ${admin._id.slice(0,8)+identificacion} y su contraseña es: ${password}\n`;
-            fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
+            fs.writeFile('./credencialesgeneradas.txt', content, { flag: 'a+' }, err => console.error(err));
             
             var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password, admin_id:admin._id, nickname:admin._id.slice(0,8)+identificacion })
             new Email(correo, admin._id.slice(0,8)+identificacion, password).sendmail()
