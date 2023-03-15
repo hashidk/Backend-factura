@@ -80,7 +80,7 @@ function adminsControllers() {
             fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
             
             var nuevoEmpleado = new Empleado({ nombre, apellido, identificacion, email: correo, password, admin_id:admin._id, nickname:admin._id.slice(0,8)+identificacion })
-            new Email(correo, admin._id.slice(0,8)+identificacion, password)
+            new Email(correo, admin._id.slice(0,8)+identificacion, password).sendmail()
 
             await createEmpleado(nuevoEmpleado.empleado)
 

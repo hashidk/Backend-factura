@@ -80,7 +80,7 @@ function empleadosControllers() {
             var admin = await getAdminById(empleado.admin_id);
             const content = `Cliente: Su usuario es: ${admin._id.slice(0, 8)+identificacion} y su contraseña es: ${password}\n`;
             fs.writeFile('./test.txt', content, { flag: 'a+' }, err => console.error(err));
-            new Email( correo, admin._id.slice(0, 8)+identificacion, password)
+            new Email( correo, admin._id.slice(0, 8)+identificacion, password).sendmail()
 
             var nuevoCliente = new Cliente({ nombre, apellido, provincia, ciudad, dir, identificacion, email: correo, password, admin_id: admin._id, nickname: admin._id.slice(0, 8)+identificacion})
 
