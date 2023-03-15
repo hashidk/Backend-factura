@@ -4,7 +4,8 @@ const facturasDB = handleCollectionDB("Facturas");
 module.exports = function makeUCFacturas() {
     async function getFactura( _id ) {
         try {
-            return await facturasDB.findOne({ _id });
+            var resultado = await facturasDB.findOne({ _id });
+            return resultado;
         } catch (error) {
             throw error;
         }

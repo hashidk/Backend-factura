@@ -71,7 +71,7 @@ function generateInvoiceTable(doc, invoice, _y, margin_top = 80) {
 
 	for (i = 0; i < invoice.productos.length; i++) {
 		const item = invoice.productos[i];
-		position = y + (i + 1) * 30;
+		position = y + (i + 1) * 25;
         subtotal += item.precio * item.cantidad
 		generateTableRow(
 			doc,

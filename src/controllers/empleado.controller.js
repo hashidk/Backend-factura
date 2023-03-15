@@ -16,8 +16,24 @@ function empleadosControllers() {
     async function getInfo(req, res) {
         const { nickname } = res.locals.user
         try {
-            var result = await getMiEmpleado(nickname)
-            return res.status(200).send({data: result})
+            var empleado = await getMiEmpleado(nickname)
+            var admin = await getAdminById(empleado.admin_id);
+
+            var productos = await getProductosUS(admin._id)
+            var clientes = await getClientesUS(admin._id)
+            var facturas = await getFacturasByEmpresa(admin._id)
+            return res.status(200).send({data: {...empleado,
+                empresa_nombre: admin.empresa_nombre,
+                empresa_dir: admin.empresa_dir,
+                empresa_pais: admin.empresa_pais,
+                empresa_ciudad: admin.empresa_ciudad,
+                empresa_provincia: admin.empresa_provincia
+            }, resumen: {
+                productos: productos.length,
+                clientes: clientes.length,
+                facturas_espera: facturas.filter(ele => ele.estado===false).length,
+                facturas_listo: facturas.filter(ele => ele.estado===true).length,
+            }})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
         }
@@ -148,9 +164,12 @@ function empleadosControllers() {
 
     async function addFactura(req, res) {
         const { nickname } = res.locals.user
-        var { clienteid, productos } = req.body
+        var { clienteid, productos, borrador } = req.body
         if (!clienteid || !productos) return res.status(400).send({message: "No se enviaron los datos necesarios"})
     
+        if (typeof borrador != "boolean") {
+            return res.status(400).send({message: 'Borrador debe ser un valor booleano'})
+        }
         //Validar datos
         try {
             await validators.validString("cliente id").anystring.validateAsync({value: clienteid})
@@ -184,7 +203,7 @@ function empleadosControllers() {
             delete admin.nombre; delete admin.apellido
             delete admin.identificacion; delete admin.usuario;
 
-            const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:idfac, items: getProd})
+            const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:idfac, items: getProd, borrador})
             idfac++;
             await createFactura(nuevaFactura.invoice)
 
@@ -197,9 +216,12 @@ function empleadosControllers() {
 
     async function updateFactura(req, res) {
         const { idFactura } = req.params;
-        var { productos } = req.body
+        var { productos, borrador } = req.body
         if (!productos) return res.status(400).send({message: "No se enviaron los datos necesarios"})
-    
+        if (typeof borrador != "boolean") {
+            return res.status(400).send({message: 'Borrador debe ser un valor booleano'})
+        }
+
         try {
             //tratamiento de Productos
             if (typeof productos === 'string') {
@@ -230,13 +252,14 @@ function empleadosControllers() {
                 delete admin.nombre; delete admin.apellido
                 delete admin.identificacion; delete admin.usuario;
     
-                const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: getProd})
-                delete nuevaFactura.invoice._id; 
+                const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: getProd, borrador, path: factura.path})
+                nuevaFactura.invoice._id = factura._id;
                 delete nuevaFactura.invoice.invoicer_nr, 
                 delete nuevaFactura.invoice.empresa,
-                await createFactura(nuevaFactura.invoice)
+                await updateFacturaUS(nuevaFactura.invoice, true)
             }else{
                 var factura = getFacturaUS(idFactura)
+                if (factura.borrador === false) return res.status(400).send({message: "No se puede editar esta factura"});
                 var empleado = await getEmpleadoById(factura.vendedor, factura.empresa);
                 delete empleado.usuario;
                 var cliente = await getClienteById(factura.cliente, empleado.admin_id);
@@ -246,7 +269,7 @@ function empleadosControllers() {
                 delete admin.nombre; delete admin.apellido
                 delete admin.identificacion; delete admin.usuario;
     
-                const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: []})
+                const nuevaFactura = new Factura({ empresa:admin, cliente:cliente, vendedor:empleado, nfactura:factura.invoicer_nr, items: [], path: factura.path, borrador})
                 await updateFacturaUS(nuevaFactura.invoice, false)
             }
             return res.status(200).send({message: "Factura actualizada"});

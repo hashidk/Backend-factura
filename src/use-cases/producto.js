@@ -56,7 +56,6 @@ module.exports = function makeUCProductos() {
         try {
             const _id = producto._id
             delete producto._id
-            console.log(producto);
             await productosDB.updateOne({ _id }, {$set: producto});
             return null;    
         } catch (error) {

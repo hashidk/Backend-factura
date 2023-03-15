@@ -1,4 +1,4 @@
-const { makeUCAdmins, makeUCEmpleados, makeUCProducto } = require("../use-cases")
+const { makeUCAdmins, makeUCEmpleados, makeUCProducto, makeUCClientes, makeUCFacturas } = require("../use-cases")
 const { getAdmin } = makeUCAdmins()
 const { 
     getEmpleado, createEmpleado, getEmpleadoById, updateEmpleado:updateEmpleadoUS, 
@@ -8,6 +8,12 @@ const {
     getProductos:getProductosUS, getProducto, createProducto, updateProducto:updateProductoUS, 
     deleteProducto:deleteProductoUS 
 } = makeUCProducto()
+const {
+    getClientes
+} = makeUCClientes()
+const {
+    getFacturasByEmpresa
+} = makeUCFacturas()
 
 const { generatePasswordRand, validators } = require("../utils")
 const {Empleado, Producto, Email } = require("../models")
@@ -17,8 +23,19 @@ function adminsControllers() {
     async function getInfo(req, res) {
         const { nickname } = res.locals.user 
         try {
-            var result = await getAdmin(nickname)
-            return res.status(200).send({data: result})
+            var admin = await getAdmin(nickname)
+            var empleados = await getEmpleadosUS(admin._id)
+            var productos = await getProductosUS(admin._id)
+            var clientes = await getClientes(admin._id)
+            var facturas = await getFacturasByEmpresa(admin._id)
+            return res.status(200).send({data: admin, resumen: {
+                empleados: empleados.length,
+                productos: productos.length,
+                clientes: clientes.length,
+                facturas_espera: facturas.filter(ele => ele.estado===false).length,
+                facturas_listo: facturas.filter(ele => ele.estado===true).length,
+                ganancias: facturas.map(ele => ele.subtotal).reduce((a, b) => a + b, 0),
+            }})
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
         }
@@ -192,6 +209,7 @@ function adminsControllers() {
             if (!producto) return res.status(400).send({message: "El producto no existe"})
             
             var nuevoproducto = new Producto({ descripcion, precio, _id: admin._id})
+            nuevoproducto.prod._id = producto._id;
             await updateProductoUS(nuevoproducto.prod)
             return res.status(200).send({message: "Producto actualizado"});
         } catch (error) {

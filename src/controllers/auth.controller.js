@@ -1,6 +1,7 @@
-const { makeAuthUsers, makeUCAdmins } = require("../use-cases");
+const { makeAuthUsers, makeUCAdmins, makeUCEmpleados } = require("../use-cases");
 const { validators, generatePasswordRand } = require("../utils");
-const {verifyCredentialsUser, genJWT} = makeAuthUsers();
+const { verifyCredentialsUser, genJWT } = makeAuthUsers();
+const { getMiEmpleado } = makeUCEmpleados();
 const { getAdmin, createAdmin } = makeUCAdmins();
 const { getCookieConfig} = require('./config');
 const path = require('path');
@@ -36,17 +37,15 @@ function authControllers() {
     
     async function registerUser(req, res) {
         // const { image } = req.files;
-        const {nombre, apellido, identificacion, empresa_nombre, empresa_dir, empresa_ciudad, empresa_provincia, empresa_pais, password, confirm_password, email} = req.body
+        const {tipo, nombre, apellido, identificacion, empresa_nombre, empresa_dir, empresa_ciudad, empresa_provincia, empresa_pais, password, confirm_password, email} = req.body
         console.log(req.body);
-        if (!nombre || !apellido || !identificacion || !empresa_nombre || !empresa_dir || !empresa_ciudad || !empresa_provincia || !empresa_pais || !password || !confirm_password || !email) 
+
+        if (!tipo || !nombre || !apellido || !identificacion || !empresa_nombre || !empresa_dir || !empresa_ciudad || !empresa_provincia || !empresa_pais || !password || !confirm_password || !email) 
             return res.status(400).send({message: 'Asegúrese de ingresar todos los campos'})
-        // if (!image) {
-        //     image
-        //     // return res.status(400).send("No ha subido ninguna imagen")
-        // };
 
         if (password !== confirm_password) return res.status(400).send({message: 'Las contraseñas deben ser iguales'})
         try {
+            await validators.validString("tipo").anystring.validateAsync({value: tipo})
             await validators.validString("nombre").anystring.validateAsync({value: nombre})
             await validators.validString("apellido").anystring.validateAsync({value: apellido})
             await validators.validString("identificacion").anystring.validateAsync({value: identificacion})
@@ -58,23 +57,10 @@ function authControllers() {
             await validators.validString().password.validateAsync({value: password})
             await validators.validString().email.validateAsync({value: email})
         } catch (error) {
-            console.log(error);
             return res.status(400).send({message: error.message})
         }
 
-        var file_name, path_img;
-        // if (!image) {
-            path_img = "logo.png";
-        // } else {
-        //     if (!(/^image/.test(image.mimetype))) return res.status(400).send({message: "El archivo que subió no es una imagen"});
-        //     path_img = generatePasswordRand(8)+image.name;
-        //     file_name = path.join(appPathRoot,'logos', path_img);
-        //     try {
-        //         image.mv(file_name);
-        //     } catch (error) {
-        //         return res.status(500).send({message: "No se pudo subir la imagen"})
-        //     }
-        // }
+        var file_name, path_img = "logo.png";
 
         try {
             var admin = await getAdmin(identificacion);
@@ -95,6 +81,35 @@ function authControllers() {
         } catch (error) {
             return res.status(error.code).send({message: error.msg})
         }
+
+        // switch (tipo) {
+        //     case 'emprendedor':
+        //         return res.status(200).send("ok")
+        //     case 'pymes':
+                
+        
+        //     default:
+        //         return res.status(400).send("El tipo de empleado no es admitido.")
+        // }
+        // if (!image) {
+        //     image
+        //     // return res.status(400).send("No ha subido ninguna imagen")
+        // };
+
+        
+
+        // if (!image) {
+        //     path_img = "logo.png";
+        // } else {
+        //     if (!(/^image/.test(image.mimetype))) return res.status(400).send({message: "El archivo que subió no es una imagen"});
+        //     path_img = generatePasswordRand(8)+image.name;
+        //     file_name = path.join(appPathRoot,'logos', path_img);
+        //     try {
+        //         image.mv(file_name);
+        //     } catch (error) {
+        //         return res.status(500).send({message: "No se pudo subir la imagen"})
+        //     }
+        // }
     }
     
     async function logOut(req, res) {

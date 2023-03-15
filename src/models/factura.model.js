@@ -9,7 +9,6 @@ module.exports = class Factura {
         data.items.forEach(element => {
             subtotal += element.cantidad*element.precio
         });
-
         var path = this.crearPDF({
             empresa: data.empresa,
             cliente: data.cliente,
@@ -18,7 +17,7 @@ module.exports = class Factura {
             subtotal: subtotal,
             productos: data.items,
             fecha: new Date(),
-        })
+        }, data.path)
 
 
         this.invoice = {
@@ -28,17 +27,22 @@ module.exports = class Factura {
             vendedor: data.vendedor._id,
             invoicer_nr: data.nfactura,
             subtotal: subtotal,
-            productos: data.items.map(element => {return [element._id, element.cantidad]}),
+            productos: data.items.map(element => {return {_id: element._id, cantidad: element.cantidad}}),
             fecha: new Date(),
-            path: path
+            path: path,
+            borrador: data.borrador,
+            estado: false
         }
 
     }
     
     //Crear factura y retornar la dirección
-    crearPDF(invoice){
-        console.log(invoice);
-        var _path_local = invoice.cliente.apellido + invoice.cliente.nombre + "_" + invoice.fecha.toLocaleDateString().split("/").join("-")+Math.floor(Math.random()*1000)+ '_factura.pdf';
+    crearPDF(invoice, anteriorPath){
+        if (anteriorPath) {
+            var _path_local = anteriorPath
+        }else{
+            var _path_local = invoice.cliente.apellido + invoice.cliente.nombre + "_" + invoice.fecha.toLocaleDateString().split("/").join("-")+"_"+invoice.fecha.toLocaleTimeString().split(":").join("-")+ '_factura.pdf';
+        }
         crearFactura(invoice, path.join(appPathRoot, 'facturas', _path_local))
         return _path_local;
     }

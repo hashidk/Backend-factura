@@ -1,14 +1,3 @@
-Administrador: Su usuario es: 1746548664 y su contraseña es: 12345678
-Administrador: Su usuario es: 1746548664 y su contraseña es: 12345678
-Empleado: Su usuario es: 1684548462 y su contraseña es: Dz2qjzi2eJAQcGI2
-Empleado: Su usuario es: 1684548462 y su contraseña es: as9oSan3i9jJPB9a
-Cliente: Su usuario es: 1548465564 y su contraseña es: J2gv50Xc3QcNrhAD
-Cliente: Su usuario es: 1548465564 y su contraseña es: yT04QeU8SuRPLf0n
-Cliente: Su usuario es: 1548465564 y su contraseña es: ScPLpTuP3JvnZ2LG
-Empleado: Su usuario es: 1717171717 y su contraseña es: TxCHFZga6tPKLdD1
 Administrador: Su usuario es: 1717171717 y su contraseña es: 12345678
-Empleado: Su usuario es: 637256a21717171717 y su contraseña es: tiUK67TijdAhBN8B
-Cliente: Su usuario es: 637256a21717171717 y su contraseña es: 6uOpMrlpAIdXg1kU
-Administrador: Su usuario es: 1717171718 y su contraseña es: 123456789
-Empleado: Su usuario es: da5b51e51717171717 y su contraseña es: IcmXd3eWsQf6fnV5
-Cliente: Su usuario es: da5b51e51717171717 y su contraseña es: nY9lXAGC4s9vhBFD
+Empleado: Su usuario es: d04e65bb1717171717 y su contraseña es: JBEY7EYA86Uaw54c
+Cliente: Su usuario es: d04e65bb1717171717 y su contraseña es: OnO6ilGX0VHFdvsy
