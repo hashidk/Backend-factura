@@ -32,9 +32,8 @@ function generateFooter(doc, _y, margin_top = 80) {
 function generateCustomerInformation(doc, invoice, _y, margin_top = 80) {
     var y = margin_top + _y
 
-	doc.fillColor('red').fontSize(12.5).text(`FACTURAR A`, 50, y)
+	doc.fillColor('red').fontSize(12.5).text(`CAJER@`, 50, y)
         .fillColor('black').fontSize(10).text(invoice.vendedor.nombre+" "+invoice.vendedor.apellido, 50, y+15)
-        .text(invoice.empresa.empresa_dir, 50, y+30, {width: 100})
 
     doc.fillColor('red').fontSize(12.5).text(`ENVIAR A`, 200, y)
         .fillColor('black').fontSize(10).text(invoice.cliente.nombre+ " "+invoice.cliente.apellido, 200, y+15)
@@ -76,19 +75,19 @@ function generateInvoiceTable(doc, invoice, _y, margin_top = 80) {
 		generateTableRow(
 			doc,
 			position,
-			i,
+			i+1,
 			item.descripcion,
-			parseFloat(item.precio).toFixed(2),
+			parseFloat(item.precio).toFixed(2)+'$',
 			item.cantidad,
-			parseFloat(item.precio * item.cantidad).toFixed(2),
+			parseFloat(item.precio * item.cantidad).toFixed(2)+'$',
 		);
 	}
 
     iva = subtotal * 0.12
     total = subtotal * 1.12
-    generateTableRow(doc, position + 30, "", "", "Subtotal", "", parseFloat(subtotal).toFixed(2), 300)
-    generateTableRow(doc, position + 60, "", "", "IVA (12%)", "", parseFloat(iva).toFixed(2), 300)
-    generateTableRow(doc, position + 90, "", "", "Total", "", parseFloat(total).toFixed(2), 300)
+    generateTableRow(doc, position + 30, "", "", "Subtotal", "", parseFloat(subtotal).toFixed(2)+'$', 300)
+    generateTableRow(doc, position + 60, "", "", "IVA (12%)", "", parseFloat(iva).toFixed(2)+'$', 300)
+    generateTableRow(doc, position + 90, "", "", "Total", "", parseFloat(total).toFixed(2)+'$', 300)
 
     return position + 90;
 }
